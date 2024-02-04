@@ -1,3 +1,4 @@
+import os
 import sys
 import shutil
 from pathlib import Path
@@ -119,6 +120,19 @@ class BackupApp(QWidget):
         # Files in path2 but not in path1
         unique_files2 = [files2[file_name] for file_name in files2 if file_name not in files1]
         self.unique_files_backup.extend(unique_files2)
+
+        # Files in both paths with different date edited [TEST/CHECK THIS!]
+        different_dates = []
+        for file_name, file_path1 in files1.items():
+            if file_name in files2:
+                file_path2 = files2[file_name]
+
+                date_edited1 = os.path.getmtime(file_path1)
+                date_edited2 = os.path.getmtime(file_path2)
+
+                if date_edited1 != date_edited2:
+                    relative_path = file_path1.relative_to(path1)
+                    different_dates.append((str(relative_path), date_edited1, date_edited2))
 
         # Get folders in both paths
         folders1 = {folder.name: folder for folder in path1.iterdir() if folder.is_dir()}
