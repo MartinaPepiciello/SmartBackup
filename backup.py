@@ -1,9 +1,10 @@
+from PyQt5.QtWidgets import QFileIconProvider, QStyle, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
+from PyQt5.QtGui import QCursor, QIcon
+from PyQt5.QtCore import Qt, QFileInfo
+from pathlib import Path
 import os
 import sys
 import shutil
-from pathlib import Path
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip
-from PyQt5.QtGui import QCursor
 
 
 class BackupApp(QWidget):
@@ -30,6 +31,10 @@ class BackupApp(QWidget):
         # Create Analyze button
         analyze_button = QPushButton('Analyze')
         analyze_button.clicked.connect(self.analyze)
+
+        # Create QListWidgets for file selection after analysis
+        self.files_in_source_list = QListWidget(self)
+        self.files_in_backup_list = QListWidget(self)
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -69,7 +74,13 @@ class BackupApp(QWidget):
         hbox_analyze.addWidget(analyze_button)
         vbox.addLayout(hbox_analyze)
 
+        ## container for QListWidgets
+        hbox_files_lists = QHBoxLayout()
+        hbox_files_lists.addWidget(self.files_in_source_list)
+        hbox_files_lists.addWidget(self.files_in_backup_list)
+        vbox.addLayout(hbox_files_lists)
 
+        ## backup button
         vbox.addWidget(self.backup_button)
 
         self.setLayout(vbox)
@@ -93,11 +104,13 @@ class BackupApp(QWidget):
 
     unique_files_dir = []
     unique_files_backup = []
+    different_dates = []
     # common_folders = []
     unique_folders_dir = []
     unique_folders_backup = []
 
     def analyze(self):
+        # Get paths
         directory = self.dir_line_edit.text()
         backup = self.backup_line_edit.text()
         if not (directory and backup):
@@ -105,7 +118,14 @@ class BackupApp(QWidget):
         
         self.directory_path = Path(directory)
         self.backup_path = Path(backup)
+
+        # Commpare the two directories
         self.compare(self.directory_path, self.backup_path)
+
+        # Update QListWidgets
+        self.update_files_lists()
+        
+        # Enable backup button
         self.backup_button.setEnabled(True)
 
     def compare(self, path1, path2):
@@ -121,18 +141,16 @@ class BackupApp(QWidget):
         unique_files2 = [files2[file_name] for file_name in files2 if file_name not in files1]
         self.unique_files_backup.extend(unique_files2)
 
-        # Files in both paths with different date edited [TEST/CHECK THIS!]
-        different_dates = []
+        # Files in both paths with different date edited
         for file_name, file_path1 in files1.items():
             if file_name in files2:
                 file_path2 = files2[file_name]
 
-                date_edited1 = os.path.getmtime(file_path1)
-                date_edited2 = os.path.getmtime(file_path2)
+                date_edited1 = int(os.path.getmtime(file_path1))
+                date_edited2 = int(os.path.getmtime(file_path2))
 
                 if date_edited1 != date_edited2:
-                    relative_path = file_path1.relative_to(path1)
-                    different_dates.append((str(relative_path), date_edited1, date_edited2))
+                    self.different_dates.append((file_path1, file_path2, date_edited1, date_edited2))
 
         # Get folders in both paths
         folders1 = {folder.name: folder for folder in path1.iterdir() if folder.is_dir()}
@@ -147,7 +165,7 @@ class BackupApp(QWidget):
         self.unique_folders_backup.extend(unique_folders2)
 
         print('\ncomparing', str(path1), 'and', str(path2))
-        print(self.unique_files_dir, '\n', self.unique_files_backup, '\n', self.unique_folders_dir, '\n', self.unique_folders_backup)
+        print(self.unique_files_dir, '\n', self.unique_files_backup, '\n', self.unique_folders_dir, '\n', self.unique_folders_backup, '\n', self.different_dates)
 
         # Common folders
         common_folders = [(folders1[folder_name], folders2[folder_name]) for folder_name in folders1 if folder_name in folders2]
@@ -155,6 +173,48 @@ class BackupApp(QWidget):
         for folder1, folder2 in common_folders:
             self.compare(folder1, folder2)
 
+    def update_files_lists(self):
+        # Clear existing items
+        self.files_in_source_list.clear()
+        self.files_in_backup_list.clear()
+
+        # Update files only in source directory list
+        for file in self.unique_files_dir:
+            item = self.create_list_item(file, self.directory_path, self.files_in_source_list, checked=True)
+
+        # Update files only in backup directory list
+        for file in self.unique_files_backup:
+            item = self.create_list_item(file, self.backup_path, self.files_in_backup_list)
+
+    def create_list_item(self, file_path, base_path, scroll_list, checked=False):
+        # Create a custom widget for each list item
+        item_widget = QWidget()
+
+        # System icon for the file
+        fileInfo = QFileInfo(str(file_path))
+        iconProvider = QFileIconProvider()
+        icon = iconProvider.icon(fileInfo)
+
+        # Relative path label
+        relative_path_label = QLabel(str(file_path.relative_to(base_path)))
+
+        # Checkbox
+        checkbox = QCheckBox()
+        checkbox.setChecked(checked)
+
+        # Arrange widgets in the custom widget
+        hbox_item = QHBoxLayout(item_widget)
+        hbox_item.addWidget(relative_path_label)
+        hbox_item.addWidget(checkbox, alignment=Qt.AlignRight)
+
+        # Create QListWidgetItem with the custom widget
+        list_item = QListWidgetItem()
+        list_item.setSizeHint(item_widget.sizeHint())  # Set the size hint for proper layout
+        list_item.setIcon(icon)
+
+        scroll_list.addItem(list_item)
+        scroll_list.setItemWidget(list_item, item_widget)
+    
     def backup(self):
         # Copy all folders (and their contents) that are not present in the backup
         for folder in self.unique_folders_dir:
