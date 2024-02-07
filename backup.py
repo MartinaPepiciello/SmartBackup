@@ -13,11 +13,10 @@ class BackupApp(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        # Create labels
+
+        # Create line edits for folder locations (+ labels)
         dir_label = QLabel('Directory to backup:')
         backup_label = QLabel('Backup location:')
-
-        # Create line edits
         self.dir_line_edit = QLineEdit()
         self.backup_line_edit = QLineEdit()
 
@@ -32,7 +31,9 @@ class BackupApp(QWidget):
         analyze_button = QPushButton('Analyze')
         analyze_button.clicked.connect(self.analyze)
 
-        # Create QListWidgets for file selection after analysis
+        # Create QListWidgets for file selection after analysis (+ labels)
+        files_in_source_label = QLabel('Files only in source directory')
+        files_in_backup_label = QLabel('Files only in backup directory')
         self.files_in_source_list = QListWidget(self)
         self.files_in_backup_list = QListWidget(self)
 
@@ -75,9 +76,15 @@ class BackupApp(QWidget):
         vbox.addLayout(hbox_analyze)
 
         ## container for QListWidgets
+        vbox_list_source = QVBoxLayout()
+        vbox_list_source.addWidget(files_in_source_label)
+        vbox_list_source.addWidget(self.files_in_source_list)
+        vbox_list_backup = QVBoxLayout()
+        vbox_list_backup.addWidget(files_in_backup_label)
+        vbox_list_backup.addWidget(self.files_in_backup_list)
         hbox_files_lists = QHBoxLayout()
-        hbox_files_lists.addWidget(self.files_in_source_list)
-        hbox_files_lists.addWidget(self.files_in_backup_list)
+        hbox_files_lists.addLayout(vbox_list_source)
+        hbox_files_lists.addLayout(vbox_list_backup)
         vbox.addLayout(hbox_files_lists)
 
         ## backup button
@@ -119,6 +126,10 @@ class BackupApp(QWidget):
         self.directory_path = Path(directory)
         self.backup_path = Path(backup)
 
+        # Clear contents of files lists
+        for file_list in [self.unique_files_dir, self.unique_files_backup, self.different_dates, self.unique_folders_dir, self.unique_folders_backup]:
+            file_list.clear()
+        
         # Commpare the two directories
         self.compare(self.directory_path, self.backup_path)
 
@@ -216,18 +227,33 @@ class BackupApp(QWidget):
         scroll_list.setItemWidget(list_item, item_widget)
     
     def backup(self):
-        # Copy all folders (and their contents) that are not present in the backup
-        for folder in self.unique_folders_dir:
-            relative_path = folder.relative_to(self.directory_path)
-            destination_path = self.backup_path / relative_path
-            shutil.copytree(folder, destination_path)
+        # # Copy all folders (and their contents) that are not present in the backup
+        # for folder in self.unique_folders_dir:
+        #     relative_path = folder.relative_to(self.directory_path)
+        #     destination_path = self.backup_path / relative_path
+        #     shutil.copytree(folder, destination_path)
 
-        # Copy all files that are not present in the backup
-        for file in self.unique_files_dir:
-            relative_path = file.relative_to(self.directory_path)
-            destination_path = self.backup_path / relative_path.parent
-            # destination_path.mkdir(parents=True, exist_ok=True) # this would create necessary parent directories, but it shouldn't be necessary because unique_files_dir only contains files from common directories
-            shutil.copy2(file, destination_path)
+        # # Copy all files that are not present in the backup
+        # for file in self.unique_files_dir:
+        #     relative_path = file.relative_to(self.directory_path)
+        #     destination_path = self.backup_path / relative_path.parent
+        #     shutil.copy2(file, destination_path)
+
+        # Perform backup for files in source directory
+        for i, file in enumerate(self.unique_files_dir):
+            item = self.files_in_source_list.item(i)
+            checkbox = self.files_in_source_list.itemWidget(item).findChild(QCheckBox)
+            if checkbox.isChecked():
+                relative_path = file.relative_to(self.directory_path)
+                destination_path = self.backup_path / relative_path.parent
+                shutil.copy2(file, destination_path)    
+
+        # Remove files from backup directory
+        for i, file in enumerate(self.unique_files_backup):
+            item = self.files_in_backup_list.item(i)
+            checkbox = self.files_in_backup_list.itemWidget(item).findChild(QCheckBox)
+            if not checkbox.isChecked():
+                os.remove(file)
 
 
 def run_app():
