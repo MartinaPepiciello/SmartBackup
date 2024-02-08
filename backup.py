@@ -8,9 +8,11 @@ import shutil
 
 
 class BackupApp(QWidget):
+
     def __init__(self):
         super().__init__()
         self.init_ui()
+
 
     def init_ui(self):
 
@@ -23,13 +25,18 @@ class BackupApp(QWidget):
         # Create buttons for browsing
         dir_browse = QPushButton('Browse')
         dir_browse.clicked.connect(self.get_directory_to_backup)
-
         backup_browse = QPushButton('Browse')
         backup_browse.clicked.connect(self.get_backup_location)
 
         # Create Analyze button
         analyze_button = QPushButton('Analyze')
         analyze_button.clicked.connect(self.analyze)
+
+        # Create QListWidgets for folder selection after analysis (+ labels)
+        folders_in_source_label = QLabel('Folders only in source directory')
+        folders_in_backup_label = QLabel('Folders only in backup directory')
+        self.folders_in_source_list = QListWidget(self)
+        self.folders_in_backup_list = QListWidget(self)
 
         # Create QListWidgets for file selection after analysis (+ labels)
         files_in_source_label = QLabel('Files only in source directory')
@@ -75,16 +82,28 @@ class BackupApp(QWidget):
         hbox_analyze.addWidget(analyze_button)
         vbox.addLayout(hbox_analyze)
 
-        ## container for QListWidgets
-        vbox_list_source = QVBoxLayout()
-        vbox_list_source.addWidget(files_in_source_label)
-        vbox_list_source.addWidget(self.files_in_source_list)
-        vbox_list_backup = QVBoxLayout()
-        vbox_list_backup.addWidget(files_in_backup_label)
-        vbox_list_backup.addWidget(self.files_in_backup_list)
+        ## container for QListWidgets (folders)
+        vbox_list_folders_source = QVBoxLayout()
+        vbox_list_folders_source.addWidget(folders_in_source_label)
+        vbox_list_folders_source.addWidget(self.folders_in_source_list)
+        vbox_list_folders_backup = QVBoxLayout()
+        vbox_list_folders_backup.addWidget(folders_in_backup_label)
+        vbox_list_folders_backup.addWidget(self.folders_in_backup_list)
+        hbox_folders_lists = QHBoxLayout()
+        hbox_folders_lists.addLayout(vbox_list_folders_source)
+        hbox_folders_lists.addLayout(vbox_list_folders_backup)
+        vbox.addLayout(hbox_folders_lists)
+
+        ## container for QListWidgets (files)
+        vbox_list_files_source = QVBoxLayout()
+        vbox_list_files_source.addWidget(files_in_source_label)
+        vbox_list_files_source.addWidget(self.files_in_source_list)
+        vbox_list_files_backup = QVBoxLayout()
+        vbox_list_files_backup.addWidget(files_in_backup_label)
+        vbox_list_files_backup.addWidget(self.files_in_backup_list)
         hbox_files_lists = QHBoxLayout()
-        hbox_files_lists.addLayout(vbox_list_source)
-        hbox_files_lists.addLayout(vbox_list_backup)
+        hbox_files_lists.addLayout(vbox_list_files_source)
+        hbox_files_lists.addLayout(vbox_list_files_backup)
         vbox.addLayout(hbox_files_lists)
 
         ## backup button
@@ -97,18 +116,24 @@ class BackupApp(QWidget):
         self.setGeometry(100, 100, 600, 150)
         self.show()
 
+
+    # File explorer for source directory
     def get_directory_to_backup(self):
         directory = QFileDialog.getExistingDirectory(self, 'Select Directory to Backup')
         if directory:
             self.dir_line_edit.setText(directory)
             self.backup_button.setEnabled(False)
 
+
+    # File explorer for backup directory
     def get_backup_location(self):
         backup_location = QFileDialog.getExistingDirectory(self, 'Select Backup Location')
         if backup_location:
             self.backup_line_edit.setText(backup_location)
             self.backup_button.setEnabled(False)
 
+
+    # Lists of paths for user decision
     unique_files_dir = []
     unique_files_backup = []
     different_dates = []
@@ -116,6 +141,8 @@ class BackupApp(QWidget):
     unique_folders_dir = []
     unique_folders_backup = []
 
+
+    # Compare source and backup directory to find differences
     def analyze(self):
         # Get paths
         directory = self.dir_line_edit.text()
@@ -126,7 +153,7 @@ class BackupApp(QWidget):
         self.directory_path = Path(directory)
         self.backup_path = Path(backup)
 
-        # Clear contents of files lists
+        # Clear contents of paths lists
         for file_list in [self.unique_files_dir, self.unique_files_backup, self.different_dates, self.unique_folders_dir, self.unique_folders_backup]:
             file_list.clear()
         
@@ -134,11 +161,13 @@ class BackupApp(QWidget):
         self.compare(self.directory_path, self.backup_path)
 
         # Update QListWidgets
-        self.update_files_lists()
+        self.update_paths_lists()
         
         # Enable backup button
         self.backup_button.setEnabled(True)
 
+    
+    # Recursively compare two directories
     def compare(self, path1, path2):
         # Get files in both paths
         files1 = {file.name: file for file in path1.glob('*') if file.is_file()}
@@ -184,11 +213,23 @@ class BackupApp(QWidget):
         for folder1, folder2 in common_folders:
             self.compare(folder1, folder2)
 
-    def update_files_lists(self):
+    
+    # Show paths for user decision in the UI
+    def update_paths_lists(self):
         # Clear existing items
+        self.folders_in_source_list.clear()
+        self.folders_in_backup_list.clear()
         self.files_in_source_list.clear()
         self.files_in_backup_list.clear()
 
+        # Update folders only in source directory list
+        for folder in self.unique_folders_dir:
+            item = self.create_list_item(folder, self.directory_path, self.folders_in_source_list, checked=True)
+
+        # Update folders only in backup directory list
+        for folder in self.unique_folders_backup:
+            item = self.create_list_item(folder, self.backup_path, self.folders_in_backup_list)
+        
         # Update files only in source directory list
         for file in self.unique_files_dir:
             item = self.create_list_item(file, self.directory_path, self.files_in_source_list, checked=True)
@@ -197,6 +238,8 @@ class BackupApp(QWidget):
         for file in self.unique_files_backup:
             item = self.create_list_item(file, self.backup_path, self.files_in_backup_list)
 
+
+    # Create path list item for the UI, including icon, relative path and checkbox
     def create_list_item(self, file_path, base_path, scroll_list, checked=False):
         # Create a custom widget for each list item
         item_widget = QWidget()
@@ -226,12 +269,14 @@ class BackupApp(QWidget):
         scroll_list.addItem(list_item)
         scroll_list.setItemWidget(list_item, item_widget)
     
+
+    # Perform copy selected items to backup and delete unselected items from backup
     def backup(self):
         # # Copy all folders (and their contents) that are not present in the backup
         # for folder in self.unique_folders_dir:
-        #     relative_path = folder.relative_to(self.directory_path)
-        #     destination_path = self.backup_path / relative_path
-        #     shutil.copytree(folder, destination_path)
+            # relative_path = folder.relative_to(self.directory_path)
+            # destination_path = self.backup_path / relative_path
+            # shutil.copytree(folder, destination_path)
 
         # # Copy all files that are not present in the backup
         # for file in self.unique_files_dir:
@@ -239,6 +284,22 @@ class BackupApp(QWidget):
         #     destination_path = self.backup_path / relative_path.parent
         #     shutil.copy2(file, destination_path)
 
+        # Perform backup for folders in source directory
+        for i, folder in enumerate(self.unique_folders_dir):
+            item = self.folders_in_source_list.item(i)
+            checkbox = self.folders_in_source_list.itemWidget(item).findChild(QCheckBox)
+            if checkbox.isChecked():
+                relative_path = folder.relative_to(self.directory_path)
+                destination_path = self.backup_path / relative_path
+                shutil.copytree(folder, destination_path)    
+
+        # Remove folders from backup directory
+        for i, folder in enumerate(self.unique_folders_backup):
+            item = self.folders_in_backup_list.item(i)
+            checkbox = self.folders_in_backup_list.itemWidget(item).findChild(QCheckBox)
+            if not checkbox.isChecked():
+                shutil.rmtree(folder)
+        
         # Perform backup for files in source directory
         for i, file in enumerate(self.unique_files_dir):
             item = self.files_in_source_list.item(i)
@@ -254,6 +315,7 @@ class BackupApp(QWidget):
             checkbox = self.files_in_backup_list.itemWidget(item).findChild(QCheckBox)
             if not checkbox.isChecked():
                 os.remove(file)
+
 
 
 def run_app():
