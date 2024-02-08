@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QFileIconProvider, QStyle, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
 from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtCore import Qt, QFileInfo
+from datetime import datetime
 from pathlib import Path
 import os
 import sys
@@ -43,6 +44,10 @@ class BackupApp(QWidget):
         files_in_backup_label = QLabel('Files only in backup directory')
         self.files_in_source_list = QListWidget(self)
         self.files_in_backup_list = QListWidget(self)
+
+        # Create QListWidget for files with different dates modified (+ label)
+        files_dates_label = QLabel('Files with different dates modified')
+        self.files_dates_list = QListWidget(self)
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -105,6 +110,12 @@ class BackupApp(QWidget):
         hbox_files_lists.addLayout(vbox_list_files_source)
         hbox_files_lists.addLayout(vbox_list_files_backup)
         vbox.addLayout(hbox_files_lists)
+
+        ## container for QListWidget of files with different dates
+        vbox_list_files_date = QVBoxLayout()
+        vbox_list_files_date.addWidget(files_dates_label)
+        vbox_list_files_date.addWidget(self.files_dates_list)
+        vbox.addLayout(vbox_list_files_date)
 
         ## backup button
         vbox.addWidget(self.backup_button)
@@ -221,6 +232,7 @@ class BackupApp(QWidget):
         self.folders_in_backup_list.clear()
         self.files_in_source_list.clear()
         self.files_in_backup_list.clear()
+        self.files_dates_list.clear()
 
         # Update folders only in source directory list
         for folder in self.unique_folders_dir:
@@ -238,8 +250,12 @@ class BackupApp(QWidget):
         for file in self.unique_files_backup:
             item = self.create_list_item(file, self.backup_path, self.files_in_backup_list)
 
+        # Update files with different dates list
+        for file in self.different_dates:
+            item = self.create_list_item_date(file[0], self.directory_path, file[2], file[3])
 
-    # Create path list item for the UI, including icon, relative path and checkbox
+
+    # Create basic path list item for the UI, including icon, relative path and checkbox
     def create_list_item(self, file_path, base_path, scroll_list, checked=False):
         # Create a custom widget for each list item
         item_widget = QWidget()
@@ -270,6 +286,51 @@ class BackupApp(QWidget):
         scroll_list.setItemWidget(list_item, item_widget)
     
 
+    # Create path list item to compare dates modified
+    def create_list_item_date(self, file_path, base_path, date_edited1, date_edited2):
+        # Create a custom widget for each list item
+        item_widget = QWidget()
+
+        # System icon for the file
+        fileInfo = QFileInfo(str(file_path))
+        iconProvider = QFileIconProvider()
+        icon = iconProvider.icon(fileInfo)
+
+        # Relative path label
+        relative_path_label = QLabel(str(file_path.relative_to(base_path)))
+
+        # Check the checkbox corresponding to the most recent date
+        checked = date_edited1 > date_edited2
+
+        # Checkboxes
+        checkbox1 = QCheckBox()
+        checkbox2 = QCheckBox()
+        checkbox1.setChecked(checked)
+        checkbox2.setChecked(not checked)
+
+        # Date labels
+        date_dt1 = datetime.utcfromtimestamp(date_edited1)
+        date_dt2 = datetime.utcfromtimestamp(date_edited2)
+        date_label1 = QLabel(date_dt1.strftime("%d/%m/%Y %H:%M"))
+        date_label2 = QLabel(date_dt2.strftime("%d/%m/%Y %H:%M"))
+
+        # Arrange widgets in the custom widget
+        hbox_item = QHBoxLayout(item_widget)
+        hbox_item.addWidget(relative_path_label)
+        hbox_item.addWidget(checkbox1, alignment=Qt.AlignRight)
+        hbox_item.addWidget(date_label1)
+        hbox_item.addWidget(checkbox2, alignment=Qt.AlignRight)
+        hbox_item.addWidget(date_label2)
+
+        # Create QListWidgetItem with the custom widget
+        list_item = QListWidgetItem()
+        list_item.setSizeHint(item_widget.sizeHint())  # Set the size hint for proper layout
+        list_item.setIcon(icon)
+
+        self.files_dates_list.addItem(list_item)
+        self.files_dates_list.setItemWidget(list_item, item_widget)
+    
+    
     # Perform copy selected items to backup and delete unselected items from backup
     def backup(self):
         # # Copy all folders (and their contents) that are not present in the backup
