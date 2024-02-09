@@ -331,7 +331,7 @@ class BackupApp(QWidget):
         self.files_dates_list.setItemWidget(list_item, item_widget)
     
     
-    # Perform copy selected items to backup and delete unselected items from backup
+    # Perform copy of selected items to backup and delete unselected items from backup
     def backup(self):
         # # Copy all folders (and their contents) that are not present in the backup
         # for folder in self.unique_folders_dir:
@@ -376,6 +376,42 @@ class BackupApp(QWidget):
             checkbox = self.files_in_backup_list.itemWidget(item).findChild(QCheckBox)
             if not checkbox.isChecked():
                 os.remove(file)
+
+        # Files with different dates edited
+        for i, file in enumerate(self.different_dates):
+            path1, path2, date1, date2 = file
+            item = self.files_dates_list.item(i)
+            widget = self.files_dates_list.itemWidget(item)
+            checkbox1, checkbox2 = [child for child in widget.children() if isinstance(child, QCheckBox)]
+
+            # if both checkboxes are checked, save both files to backup with a suffix specifying the date modified
+            if checkbox1.isChecked() and checkbox2.isChecked():
+                date_dt1 = datetime.utcfromtimestamp(date1)
+                date_dt2 = datetime.utcfromtimestamp(date2)
+                date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
+                date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
+
+                directory2, filename2 = os.path.split(path2)
+                new_filename2 = f"{os.path.splitext(filename2)[0]}{date_suffix2}{os.path.splitext(filename2)[1]}"
+                new_path2 = os.path.join(directory2, new_filename2)
+                os.rename(path2, new_path2)
+
+                directory1, filename1 = os.path.split(path1)
+                new_filename1 = f"{os.path.splitext(filename1)[0]}{date_suffix1}{os.path.splitext(filename1)[1]}"
+                new_path1 = os.path.join(directory2, new_filename1)
+                shutil.copy2(path1, new_path1)
+
+            # if only checkbox1 is checked, delete existing file from backup and save file from source instead
+            elif checkbox1.isChecked() and not checkbox2.isChecked():
+                os.remove(path2)
+                relative_path = path1.relative_to(self.directory_path)
+                destination_path = self.backup_path / relative_path.parent
+                shutil.copy2(path1, destination_path)
+
+            # if no checkbox is checked, just delete existing file from backup
+            elif not checkbox1.isChecked() and not checkbox2.isChecked():
+                os.remove(path2)
+
 
 
 
