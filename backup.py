@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QFileIconProvider, QStyle, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
+from PyQt5.QtWidgets import QFileIconProvider, QDesktopWidget, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
 from PyQt5.QtGui import QCursor, QIcon
 from PyQt5.QtCore import Qt, QFileInfo
 from datetime import datetime
@@ -123,8 +123,11 @@ class BackupApp(QWidget):
         self.setLayout(vbox)
 
         # Set window properties
+        desktop = QDesktopWidget().screenGeometry()
+        width = int(desktop.width() * 0.5)
+        height = int(desktop.height() * 0.8)
         self.setWindowTitle('Backup Application')
-        self.setGeometry(100, 100, 600, 150)
+        self.setGeometry(100, 100, width, height)
         self.show()
 
 

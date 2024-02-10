@@ -1,4 +1,4 @@
-window starts as a fixed percentage of screen size
+OK  window starts as a fixed percentage of screen size
 headings for sections (Choose the source and backup directories, Choose which files to backup, (Backup))
 headings for columns in different dates modified sections
 (?) icons next to qlists to explain what ticking the checkboxes does
