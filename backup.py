@@ -408,8 +408,15 @@ class BackupApp(QWidget):
                 destination_path = self.backup_path / relative_path.parent
                 shutil.copy2(path1, destination_path)
 
+            # if only checkbox2 is checked, overwrite source version with backup version
+            elif not checkbox1.isChecked() and checkbox2.isChecked():
+                os.remove(path1)
+                relative_path = path2.relative_to(self.backup_path)
+                destination_path = self.directory_path / relative_path.parent
+                shutil.copy2(path2, destination_path)
+
             # if no checkbox is checked, just delete existing file from backup
-            elif not checkbox1.isChecked() and not checkbox2.isChecked():
+            else:
                 os.remove(path2)
 
 
