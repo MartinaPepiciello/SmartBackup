@@ -1,5 +1,5 @@
 OK  window starts as a fixed percentage of screen size
-headings for sections (Choose the source and backup directories, Choose which files to backup, (Backup))
+OK  headings for sections (Choose the source and backup directories, Choose which files to backup, (Backup))
 headings for columns in different dates modified sections
 (?) icons next to qlists to explain what ticking the checkboxes does
 progress bar + message when backup has finished

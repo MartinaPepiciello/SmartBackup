@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QFileIconProvider, QDesktopWidget, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
-from PyQt5.QtGui import QCursor, QIcon
+from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtCore import Qt, QFileInfo
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +17,15 @@ class BackupApp(QWidget):
 
     def init_ui(self):
 
+        # Crearte bold section titles
+        directories_title = QLabel('Choose the source and backup directories')
+        files_title = QLabel('Choose which files to backup')
+        title_font = QFont()
+        # title_font.setBold(True)
+        title_font.setPointSize(12)
+        directories_title.setFont(title_font)
+        files_title.setFont(title_font)
+        
         # Create line edits for folder locations (+ labels)
         dir_label = QLabel('Directory to backup:')
         backup_label = QLabel('Backup location:')
@@ -64,6 +73,9 @@ class BackupApp(QWidget):
         # Arrange widgets using layouts
         ## global container
         vbox = QVBoxLayout()
+
+        ## directories title
+        vbox.addWidget(directories_title)
         
         ## containers for folder selectors
         hbox_dir = QHBoxLayout()
@@ -86,6 +98,10 @@ class BackupApp(QWidget):
         hbox_analyze.addLayout(vbox_browse)
         hbox_analyze.addWidget(analyze_button)
         vbox.addLayout(hbox_analyze)
+
+        ## files to backup title
+        vbox.addWidget(files_title)
+        files_title.setContentsMargins(0, 40, 0, 0)
 
         ## container for QListWidgets (folders)
         vbox_list_folders_source = QVBoxLayout()
@@ -218,8 +234,8 @@ class BackupApp(QWidget):
         unique_folders2 = [folders2[folder_name] for folder_name in folders2 if folder_name not in folders1]
         self.unique_folders_backup.extend(unique_folders2)
 
-        print('\ncomparing', str(path1), 'and', str(path2))
-        print(self.unique_files_dir, '\n', self.unique_files_backup, '\n', self.unique_folders_dir, '\n', self.unique_folders_backup, '\n', self.different_dates)
+        # print('\ncomparing', str(path1), 'and', str(path2))
+        # print(self.unique_files_dir, '\n', self.unique_files_backup, '\n', self.unique_folders_dir, '\n', self.unique_folders_backup, '\n', self.different_dates)
 
         # Common folders
         common_folders = [(folders1[folder_name], folders2[folder_name]) for folder_name in folders1 if folder_name in folders2]
@@ -316,6 +332,14 @@ class BackupApp(QWidget):
         date_dt2 = datetime.utcfromtimestamp(date_edited2)
         date_label1 = QLabel(date_dt1.strftime("%d/%m/%Y %H:%M"))
         date_label2 = QLabel(date_dt2.strftime("%d/%m/%Y %H:%M"))
+
+        # Most recent date in bold
+        font1 = QFont()
+        font2 = QFont()
+        font1.setBold(checked)
+        font2.setBold(not checked)
+        date_label1.setFont(font1)
+        date_label2.setFont(font2)
 
         # Arrange widgets in the custom widget
         hbox_item = QHBoxLayout(item_widget)
