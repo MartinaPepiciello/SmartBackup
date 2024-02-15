@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QFileIconProvider, QDesktopWidget, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox
+from PyQt5.QtWidgets import QFileIconProvider, QDesktopWidget, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox, QStyle
 from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtCore import Qt, QFileInfo
+from PyQt5.QtCore import Qt, QFileInfo, QSize
 from datetime import datetime
 from pathlib import Path
 import os
@@ -10,12 +10,14 @@ import shutil
 
 class BackupApp(QWidget):
 
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
+        self.app = app
         self.init_ui()
 
 
     def init_ui(self):
+        scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
 
         # Crearte bold section titles
         directories_title = QLabel('Choose the source and backup directories')
@@ -141,7 +143,8 @@ class BackupApp(QWidget):
         hbox_headers.addWidget(header_label2)
         hbox_headers.addWidget(QLabel('  '))
         hbox_headers.addWidget(header_label3)
-        hbox_headers.setContentsMargins(50, 0, 50, 0)
+
+        hbox_headers.setContentsMargins(scrollbar_width, 0, scrollbar_width, 0)
         vbox_list_files_date.addLayout(hbox_headers)
         vbox_list_files_date.addWidget(self.files_dates_list)
         vbox_list_files_date.setContentsMargins(0, 0, 0, 50)
@@ -164,8 +167,10 @@ class BackupApp(QWidget):
         desktop = QDesktopWidget().screenGeometry()
         width = int(desktop.width() * 0.5)
         height = int(desktop.height() * 0.8)
+        left = int(desktop.width() * 0.25)
+        top = int(desktop.height() * 0.1)
         self.setWindowTitle('Backup Application')
-        self.setGeometry(100, 100, width, height)
+        self.setGeometry(left, top, width, height)
         self.show()
 
 
@@ -473,7 +478,7 @@ class BackupApp(QWidget):
 
 def run_app():
     app = QApplication(sys.argv)
-    window = BackupApp()
+    window = BackupApp(app)
     sys.exit(app.exec_())
 
 
