@@ -57,9 +57,6 @@ class BackupApp(QWidget):
         # Create QListWidget for files with different dates modified (+ label)
         files_dates_label = QLabel('Files with different dates modified')
         self.files_dates_list = QListWidget(self)
-        header_label1 = QLabel("File name")
-        header_label2 = QLabel("Last modified in source")
-        header_label3 = QLabel("Last modified in backup")
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -116,7 +113,6 @@ class BackupApp(QWidget):
         hbox_folders_lists = QHBoxLayout()
         hbox_folders_lists.addLayout(vbox_list_folders_source)
         hbox_folders_lists.addLayout(vbox_list_folders_backup)
-        hbox_folders_lists.setContentsMargins(0, 0, 0, 50)
         vbox.addLayout(hbox_folders_lists)
 
         ## container for QListWidgets (files)
@@ -129,36 +125,18 @@ class BackupApp(QWidget):
         hbox_files_lists = QHBoxLayout()
         hbox_files_lists.addLayout(vbox_list_files_source)
         hbox_files_lists.addLayout(vbox_list_files_backup)
-        hbox_files_lists.setContentsMargins(0, 0, 0, 50)
         vbox.addLayout(hbox_files_lists)
 
         ## container for QListWidget of files with different dates
         vbox_list_files_date = QVBoxLayout()
         vbox_list_files_date.addWidget(files_dates_label)
-        hbox_headers = QHBoxLayout()
-        hbox_headers.addWidget(header_label1)
-        hbox_headers.addWidget(QLabel('  '))
-        hbox_headers.addWidget(header_label2)
-        hbox_headers.addWidget(QLabel('  '))
-        hbox_headers.addWidget(header_label3)
-        hbox_headers.setContentsMargins(50, 0, 50, 0)
-        vbox_list_files_date.addLayout(hbox_headers)
         vbox_list_files_date.addWidget(self.files_dates_list)
-        vbox_list_files_date.setContentsMargins(0, 0, 0, 50)
         vbox.addLayout(vbox_list_files_date)
 
         ## backup button
         vbox.addWidget(self.backup_button)
 
         self.setLayout(vbox)
-
-
-
-        # border_style = "border: 1px solid red;"
-        # for widget in self.findChildren(QWidget):
-        #     widget.setStyleSheet(border_style)
-
-
 
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
