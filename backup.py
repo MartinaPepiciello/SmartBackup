@@ -1,9 +1,9 @@
 from datetime import datetime
 import os
 from pathlib import Path
-from PyQt5.QtCore import Qt, QFileInfo
+from PyQt5.QtCore import Qt, QFileInfo, QSize
 from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtWidgets import QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QStyle, QToolTip, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QProgressBar, QStyle, QToolTip, QVBoxLayout, QWidget
 import shutil
 import sys
 
@@ -21,6 +21,7 @@ class BackupApp(QWidget):
     def init_ui(self):
         # Get width of a scrollbar to use as spacing unit
         scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
+
 
         # Crearte bold section titles
         directories_title = QLabel('Choose the source and backup directories')
@@ -66,6 +67,12 @@ class BackupApp(QWidget):
                 
         self.backup_button.setMouseTracking(True)
         self.backup_button.enterEvent = show_popup
+
+        # Create progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setMaximum(100)
+
 
         # Arrange widgets using layouts
         ## global container
@@ -141,8 +148,15 @@ class BackupApp(QWidget):
         vbox_list_files_date.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(vbox_list_files_date)
 
-        ## backup button
+        ## backup button and progress bar
         vbox.addWidget(self.backup_button)
+        vbox.addWidget(self.progress_bar)
+
+        # question mark icon test
+        question_label = QLabel()
+        icon_provider = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
+        question_label.setPixmap(icon_provider.pixmap(QSize(scrollbar_width, scrollbar_width)))
+        vbox.addWidget(question_label)
 
         ## complete layout
         self.setLayout(vbox)
@@ -366,6 +380,10 @@ class BackupApp(QWidget):
     
     # Perform copy of selected items to backup and delete unselected items from backup
     def backup(self):
+        # Initialize item counter for progress bar
+        total_items = len(self.unique_folders_dir) + len(self.unique_folders_backup) + len(self.unique_files_dir) + len(self.unique_files_backup) + len(self.different_dates)
+        processed_items = 0
+
         # Perform backup for folders in source directory
         for i, folder in enumerate(self.unique_folders_dir):
             item = self.folders_in_source_list.item(i)
@@ -373,7 +391,9 @@ class BackupApp(QWidget):
             if checkbox.isChecked():
                 relative_path = folder.relative_to(self.directory_path)
                 destination_path = self.backup_path / relative_path
-                shutil.copytree(folder, destination_path)    
+                shutil.copytree(folder, destination_path)
+            processed_items += 1
+            self.update_progress(processed_items, total_items)  
 
         # Remove folders from backup directory
         for i, folder in enumerate(self.unique_folders_backup):
@@ -381,6 +401,8 @@ class BackupApp(QWidget):
             checkbox = self.folders_in_backup_list.itemWidget(item).findChild(QCheckBox)
             if not checkbox.isChecked():
                 shutil.rmtree(folder)
+            processed_items += 1
+            self.update_progress(processed_items, total_items) 
         
         # Perform backup for files in source directory
         for i, file in enumerate(self.unique_files_dir):
@@ -389,7 +411,9 @@ class BackupApp(QWidget):
             if checkbox.isChecked():
                 relative_path = file.relative_to(self.directory_path)
                 destination_path = self.backup_path / relative_path.parent
-                shutil.copy2(file, destination_path)    
+                shutil.copy2(file, destination_path) 
+            processed_items += 1
+            self.update_progress(processed_items, total_items)    
 
         # Remove files from backup directory
         for i, file in enumerate(self.unique_files_backup):
@@ -397,6 +421,8 @@ class BackupApp(QWidget):
             checkbox = self.files_in_backup_list.itemWidget(item).findChild(QCheckBox)
             if not checkbox.isChecked():
                 os.remove(file)
+            processed_items += 1
+            self.update_progress(processed_items, total_items) 
 
         # Files with different dates edited
         for i, file in enumerate(self.different_dates):
@@ -439,6 +465,15 @@ class BackupApp(QWidget):
             # if no checkbox is checked, just delete existing file from backup
             else:
                 os.remove(path2)
+
+            processed_items += 1
+            self.update_progress(processed_items, total_items) 
+
+
+    def update_progress(self, processed, total):
+        progress_percentage = int((processed / total) * 100)
+        self.progress_bar.setValue(progress_percentage)
+        QApplication.processEvents()
 
 
 
