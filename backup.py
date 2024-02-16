@@ -1,11 +1,13 @@
-from PyQt5.QtWidgets import QFileIconProvider, QDesktopWidget, QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QFileDialog, QToolTip, QListWidget, QListWidgetItem, QCheckBox, QStyle
-from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtCore import Qt, QFileInfo, QSize
 from datetime import datetime
-from pathlib import Path
 import os
-import sys
+from pathlib import Path
+from PyQt5.QtCore import Qt, QFileInfo
+from PyQt5.QtGui import QCursor, QFont
+from PyQt5.QtWidgets import QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QStyle, QToolTip, QVBoxLayout, QWidget
 import shutil
+import sys
+
+
 
 
 class BackupApp(QWidget):
@@ -17,20 +19,18 @@ class BackupApp(QWidget):
 
 
     def init_ui(self):
+        # Get width of a scrollbar to use as spacing unit
         scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
 
         # Crearte bold section titles
         directories_title = QLabel('Choose the source and backup directories')
         files_title = QLabel('Choose which files to backup')
         title_font = QFont()
-        # title_font.setBold(True)
         title_font.setPointSize(12)
         directories_title.setFont(title_font)
         files_title.setFont(title_font)
         
-        # Create line edits for folder locations (+ labels)
-        dir_label = QLabel('Directory to backup:')
-        backup_label = QLabel('Backup location:')
+        # Create line edits for folder locations
         self.dir_line_edit = QLineEdit()
         self.backup_line_edit = QLineEdit()
 
@@ -44,24 +44,16 @@ class BackupApp(QWidget):
         analyze_button = QPushButton('Analyze')
         analyze_button.clicked.connect(self.analyze)
 
-        # Create QListWidgets for folder selection after analysis (+ labels)
-        folders_in_source_label = QLabel('Folders only in source directory')
-        folders_in_backup_label = QLabel('Folders only in backup directory')
+        # Create QListWidgets for folder selection after analysis
         self.folders_in_source_list = QListWidget(self)
         self.folders_in_backup_list = QListWidget(self)
 
-        # Create QListWidgets for file selection after analysis (+ labels)
-        files_in_source_label = QLabel('Files only in source directory')
-        files_in_backup_label = QLabel('Files only in backup directory')
+        # Create QListWidgets for file selection after analysis
         self.files_in_source_list = QListWidget(self)
         self.files_in_backup_list = QListWidget(self)
 
-        # Create QListWidget for files with different dates modified (+ label)
-        files_dates_label = QLabel('Files with different dates modified')
+        # Create QListWidget for files with different dates modified
         self.files_dates_list = QListWidget(self)
-        header_label1 = QLabel("File name")
-        header_label2 = QLabel("Last modified in source")
-        header_label3 = QLabel("Last modified in backup")
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -84,12 +76,11 @@ class BackupApp(QWidget):
         
         ## containers for folder selectors
         hbox_dir = QHBoxLayout()
-        hbox_dir.addWidget(dir_label)
+        hbox_dir.addWidget(QLabel('Directory to backup:'))
         hbox_dir.addWidget(self.dir_line_edit)
         hbox_dir.addWidget(dir_browse)
-
         hbox_backup = QHBoxLayout()
-        hbox_backup.addWidget(backup_label)
+        hbox_backup.addWidget(QLabel('Backup location:'))
         hbox_backup.addWidget(self.backup_line_edit)
         hbox_backup.addWidget(backup_browse)
 
@@ -106,62 +97,55 @@ class BackupApp(QWidget):
 
         ## files to backup title
         vbox.addWidget(files_title)
-        files_title.setContentsMargins(0, 40, 0, 0)
+        files_title.setContentsMargins(0, scrollbar_width, 0, 0)
 
         ## container for QListWidgets (folders)
         vbox_list_folders_source = QVBoxLayout()
-        vbox_list_folders_source.addWidget(folders_in_source_label)
+        vbox_list_folders_source.addWidget(QLabel('Folders only in source directory'))
         vbox_list_folders_source.addWidget(self.folders_in_source_list)
         vbox_list_folders_backup = QVBoxLayout()
-        vbox_list_folders_backup.addWidget(folders_in_backup_label)
+        vbox_list_folders_backup.addWidget(QLabel('Folders only in backup directory'))
         vbox_list_folders_backup.addWidget(self.folders_in_backup_list)
         hbox_folders_lists = QHBoxLayout()
         hbox_folders_lists.addLayout(vbox_list_folders_source)
         hbox_folders_lists.addLayout(vbox_list_folders_backup)
-        hbox_folders_lists.setContentsMargins(0, 0, 0, 50)
+        hbox_folders_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_folders_lists)
 
         ## container for QListWidgets (files)
         vbox_list_files_source = QVBoxLayout()
-        vbox_list_files_source.addWidget(files_in_source_label)
+        vbox_list_files_source.addWidget(QLabel('Files only in source directory'))
         vbox_list_files_source.addWidget(self.files_in_source_list)
         vbox_list_files_backup = QVBoxLayout()
-        vbox_list_files_backup.addWidget(files_in_backup_label)
+        vbox_list_files_backup.addWidget(QLabel('Files only in backup directory'))
         vbox_list_files_backup.addWidget(self.files_in_backup_list)
         hbox_files_lists = QHBoxLayout()
         hbox_files_lists.addLayout(vbox_list_files_source)
         hbox_files_lists.addLayout(vbox_list_files_backup)
-        hbox_files_lists.setContentsMargins(0, 0, 0, 50)
+        hbox_files_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_files_lists)
 
         ## container for QListWidget of files with different dates
         vbox_list_files_date = QVBoxLayout()
-        vbox_list_files_date.addWidget(files_dates_label)
+        vbox_list_files_date.addWidget(QLabel('Files with different dates modified'))
         hbox_headers = QHBoxLayout()
-        hbox_headers.addWidget(header_label1)
+        hbox_headers.addWidget(QLabel("File name"))
         hbox_headers.addWidget(QLabel('  '))
-        hbox_headers.addWidget(header_label2)
+        hbox_headers.addWidget(QLabel("Last modified in source"))
         hbox_headers.addWidget(QLabel('  '))
-        hbox_headers.addWidget(header_label3)
+        hbox_headers.addWidget(QLabel("Last modified in backup"))
 
         hbox_headers.setContentsMargins(scrollbar_width, 0, scrollbar_width, 0)
         vbox_list_files_date.addLayout(hbox_headers)
         vbox_list_files_date.addWidget(self.files_dates_list)
-        vbox_list_files_date.setContentsMargins(0, 0, 0, 50)
+        vbox_list_files_date.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(vbox_list_files_date)
 
         ## backup button
         vbox.addWidget(self.backup_button)
 
+        ## complete layout
         self.setLayout(vbox)
-
-
-
-        # border_style = "border: 1px solid red;"
-        # for widget in self.findChildren(QWidget):
-        #     widget.setStyleSheet(border_style)
-
-
 
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
@@ -193,10 +177,9 @@ class BackupApp(QWidget):
     # Lists of paths for user decision
     unique_files_dir = []
     unique_files_backup = []
-    different_dates = []
-    # common_folders = []
     unique_folders_dir = []
     unique_folders_backup = []
+    different_dates = []
 
 
     # Compare source and backup directory to find differences
@@ -261,12 +244,8 @@ class BackupApp(QWidget):
         unique_folders2 = [folders2[folder_name] for folder_name in folders2 if folder_name not in folders1]
         self.unique_folders_backup.extend(unique_folders2)
 
-        # print('\ncomparing', str(path1), 'and', str(path2))
-        # print(self.unique_files_dir, '\n', self.unique_files_backup, '\n', self.unique_folders_dir, '\n', self.unique_folders_backup, '\n', self.different_dates)
-
-        # Common folders
+        # Common folders (recursively compare)
         common_folders = [(folders1[folder_name], folders2[folder_name]) for folder_name in folders1 if folder_name in folders2]
-        # self.common_folders.extend(common_folders)
         for folder1, folder2 in common_folders:
             self.compare(folder1, folder2)
 
@@ -387,18 +366,6 @@ class BackupApp(QWidget):
     
     # Perform copy of selected items to backup and delete unselected items from backup
     def backup(self):
-        # # Copy all folders (and their contents) that are not present in the backup
-        # for folder in self.unique_folders_dir:
-            # relative_path = folder.relative_to(self.directory_path)
-            # destination_path = self.backup_path / relative_path
-            # shutil.copytree(folder, destination_path)
-
-        # # Copy all files that are not present in the backup
-        # for file in self.unique_files_dir:
-        #     relative_path = file.relative_to(self.directory_path)
-        #     destination_path = self.backup_path / relative_path.parent
-        #     shutil.copy2(file, destination_path)
-
         # Perform backup for folders in source directory
         for i, folder in enumerate(self.unique_folders_dir):
             item = self.folders_in_source_list.item(i)
