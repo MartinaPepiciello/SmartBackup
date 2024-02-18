@@ -1,6 +1,6 @@
 OK  window starts as a fixed percentage of screen size
 OK  headings for sections (Choose the source and backup directories, Choose which files to backup, (Backup))
-OK headings for columns in different dates modified sections
-(?) icons next to qlists to explain what ticking the checkboxes does
-OK progress bar + message when backup has finished
-NO step into folders
+OK  headings for columns in different dates modified sections
+OK  icons next to qlists to explain what ticking the checkboxes does
+OK  progress bar + message when backup has finished
+NO  step into folders

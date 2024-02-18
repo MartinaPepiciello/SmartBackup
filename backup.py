@@ -22,6 +22,8 @@ class BackupApp(QWidget):
         # Get width of a scrollbar to use as spacing unit
         scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
 
+        # Get question mark icon
+        question_icon = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
 
         # Crearte bold section titles
         directories_title = QLabel('Choose the source and backup directories')
@@ -45,15 +47,43 @@ class BackupApp(QWidget):
         analyze_button = QPushButton('Analyze')
         analyze_button.clicked.connect(self.analyze)
 
-        # Create QListWidgets for folder selection after analysis
+        # Create label to show which folder is being analyzed
+        self.analyzing_label = QLabel(' ')
+
+        # Create QListWidgets for folder selection after analysis, labels and explanatory messages
+        folders_in_source_label = QLabel('Folders only in source directory')
+        folders_in_source_hint = QLabel()
+        folders_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
+        folders_in_source_hint.setToolTip('Checked folders and their contents will be copied to backup')
+        folders_in_source_hint.enterEvent = lambda event: self.show_explanation(folders_in_source_hint.toolTip())
         self.folders_in_source_list = QListWidget(self)
+        folders_in_backup_label = QLabel('Folders only in backup directory')
+        folders_in_backup_hint = QLabel()
+        folders_in_backup_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
+        folders_in_backup_hint.setToolTip('Unchecked folders and their contents will be removed from backup')
+        folders_in_backup_hint.enterEvent = lambda event: self.show_explanation(folders_in_backup_hint.toolTip())
         self.folders_in_backup_list = QListWidget(self)
 
-        # Create QListWidgets for file selection after analysis
+        # Create QListWidgets for file selection after analysis, labels and explanatory messages
+        files_in_source_label = QLabel('Files only in source directory')
+        files_in_source_hint = QLabel()
+        files_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
+        files_in_source_hint.setToolTip('Checked files will be copied to backup')
+        files_in_source_hint.enterEvent = lambda event: self.show_explanation(files_in_source_hint.toolTip())
         self.files_in_source_list = QListWidget(self)
-        self.files_in_backup_list = QListWidget(self)
+        files_in_backup_label = QLabel('Files only in backup directory')
+        files_in_backup_hint = QLabel()
+        files_in_backup_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width))) 
+        files_in_backup_hint.setToolTip('Unchecked files will be removed from backup')
+        files_in_backup_hint.enterEvent = lambda event: self.show_explanation(files_in_backup_hint.toolTip())
+        self.files_in_backup_list = QListWidget(self)   
 
-        # Create QListWidget for files with different dates modified
+        # Create QListWidget for files with different dates modified, label and explanatory message
+        files_dates_label = QLabel('Files with different dates modified')
+        files_dates_hint = QLabel()
+        files_dates_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width))) 
+        files_dates_hint.setToolTip('If both versions are checked, they will be saved in backup with different names.\nIf only one version is checked, it will be saved in both source and backup.\nIf no version is checked, the one in backup will be deleted.')
+        files_dates_hint.enterEvent = lambda event: self.show_explanation(files_dates_hint.toolTip())
         self.files_dates_list = QListWidget(self)
 
         # Create Backup button
@@ -102,17 +132,30 @@ class BackupApp(QWidget):
         hbox_analyze.addWidget(analyze_button)
         vbox.addLayout(hbox_analyze)
 
+        ## analyzing label
+        vbox.addWidget(self.analyzing_label)
+
         ## files to backup title
         vbox.addWidget(files_title)
         files_title.setContentsMargins(0, scrollbar_width, 0, 0)
 
         ## container for QListWidgets (folders)
         vbox_list_folders_source = QVBoxLayout()
-        vbox_list_folders_source.addWidget(QLabel('Folders only in source directory'))
+        hbox_list_folders_source = QHBoxLayout()
+        hbox_list_folders_source.addWidget(folders_in_source_label)
+        hbox_list_folders_source.addWidget(folders_in_source_hint)
+        hbox_list_folders_source.addStretch()
+        vbox_list_folders_source.addLayout(hbox_list_folders_source)
         vbox_list_folders_source.addWidget(self.folders_in_source_list)
+
         vbox_list_folders_backup = QVBoxLayout()
-        vbox_list_folders_backup.addWidget(QLabel('Folders only in backup directory'))
+        hbox_list_folders_backup = QHBoxLayout()
+        hbox_list_folders_backup.addWidget(folders_in_backup_label)
+        hbox_list_folders_backup.addWidget(folders_in_backup_hint)
+        hbox_list_folders_backup.addStretch()
+        vbox_list_folders_backup.addLayout(hbox_list_folders_backup)
         vbox_list_folders_backup.addWidget(self.folders_in_backup_list)
+
         hbox_folders_lists = QHBoxLayout()
         hbox_folders_lists.addLayout(vbox_list_folders_source)
         hbox_folders_lists.addLayout(vbox_list_folders_backup)
@@ -121,11 +164,21 @@ class BackupApp(QWidget):
 
         ## container for QListWidgets (files)
         vbox_list_files_source = QVBoxLayout()
-        vbox_list_files_source.addWidget(QLabel('Files only in source directory'))
+        hbox_list_files_source = QHBoxLayout()
+        hbox_list_files_source.addWidget(files_in_source_label)
+        hbox_list_files_source.addWidget(files_in_source_hint)
+        hbox_list_files_source.addStretch()
+        vbox_list_files_source.addLayout(hbox_list_files_source)
         vbox_list_files_source.addWidget(self.files_in_source_list)
+
         vbox_list_files_backup = QVBoxLayout()
-        vbox_list_files_backup.addWidget(QLabel('Files only in backup directory'))
+        hbox_list_files_backup = QHBoxLayout()
+        hbox_list_files_backup.addWidget(files_in_backup_label)
+        hbox_list_files_backup.addWidget(files_in_backup_hint)
+        hbox_list_files_backup.addStretch()
+        vbox_list_files_backup.addLayout(hbox_list_files_backup)
         vbox_list_files_backup.addWidget(self.files_in_backup_list)
+
         hbox_files_lists = QHBoxLayout()
         hbox_files_lists.addLayout(vbox_list_files_source)
         hbox_files_lists.addLayout(vbox_list_files_backup)
@@ -134,7 +187,12 @@ class BackupApp(QWidget):
 
         ## container for QListWidget of files with different dates
         vbox_list_files_date = QVBoxLayout()
-        vbox_list_files_date.addWidget(QLabel('Files with different dates modified'))
+        hbox_list_files_date = QHBoxLayout()
+        hbox_list_files_date.addWidget(files_dates_label)
+        hbox_list_files_date.addWidget(files_dates_hint)
+        hbox_list_files_date.addStretch()
+        vbox_list_files_date.addLayout(hbox_list_files_date)
+
         hbox_headers = QHBoxLayout()
         hbox_headers.addWidget(QLabel("File name"))
         hbox_headers.addWidget(QLabel('  '))
@@ -152,14 +210,9 @@ class BackupApp(QWidget):
         vbox.addWidget(self.backup_button)
         vbox.addWidget(self.progress_bar)
 
-        # question mark icon test
-        question_label = QLabel()
-        icon_provider = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
-        question_label.setPixmap(icon_provider.pixmap(QSize(scrollbar_width, scrollbar_width)))
-        vbox.addWidget(question_label)
-
         ## complete layout
         self.setLayout(vbox)
+
 
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
@@ -186,6 +239,11 @@ class BackupApp(QWidget):
         if backup_location:
             self.backup_line_edit.setText(backup_location)
             self.backup_button.setEnabled(False)
+
+    
+    # Show hints tooltips
+    def show_explanation(self, message):
+        QToolTip.showText(QCursor.pos(), message)
 
 
     # Lists of paths for user decision
@@ -214,6 +272,10 @@ class BackupApp(QWidget):
         # Commpare the two directories
         self.compare(self.directory_path, self.backup_path)
 
+        # Reset analyzing label
+        self.analyzing_label.setText('  ')
+        QApplication.processEvents()
+
         # Update QListWidgets
         self.update_paths_lists()
         
@@ -223,6 +285,10 @@ class BackupApp(QWidget):
     
     # Recursively compare two directories
     def compare(self, path1, path2):
+        # Show which folder is being analyzed
+        self.analyzing_label.setText('Analyzing ' + str(path1.relative_to(self.directory_path)))
+        QApplication.processEvents()
+
         # Get files in both paths
         files1 = {file.name: file for file in path1.glob('*') if file.is_file()}
         files2 = {file.name: file for file in path2.glob('*') if file.is_file()}
