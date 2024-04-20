@@ -213,6 +213,7 @@ class BackupApp(QWidget):
         ## complete layout
         self.setLayout(vbox)
 
+        self.setStyleSheet("QWidget { border: 1px solid blue; }")
 
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
