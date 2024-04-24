@@ -2,8 +2,8 @@ from datetime import datetime
 import os
 from pathlib import Path
 from PyQt5.QtCore import Qt, QFileInfo, QSize
-from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtWidgets import QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QProgressBar, QStyle, QToolTip, QVBoxLayout, QWidget
+from PyQt5.QtGui import QCursor, QFont, QIcon
+from PyQt5.QtWidgets import QAbstractScrollArea, QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QProgressBar, QStyle, QTableWidget, QTableWidgetItem, QToolTip, QVBoxLayout, QWidget
 import shutil
 import sys
 
@@ -19,6 +19,10 @@ class BackupApp(QWidget):
 
 
     def init_ui(self):
+        '''
+        Initialize the UI
+        '''
+
         # Get width of a scrollbar to use as spacing unit
         scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
 
@@ -50,13 +54,28 @@ class BackupApp(QWidget):
         # Create label to show which folder is being analyzed
         self.analyzing_label = QLabel(' ')
 
-        # Create QListWidgets for folder selection after analysis, labels and explanatory messages
-        folders_in_source_label = QLabel('Folders only in source directory')
-        folders_in_source_hint = QLabel()
-        folders_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
-        folders_in_source_hint.setToolTip('Checked folders and their contents will be copied to backup')
-        folders_in_source_hint.enterEvent = lambda event: self.show_explanation(folders_in_source_hint.toolTip())
-        self.folders_in_source_list = QListWidget(self)
+        # Create QTableWidgets for folder selection after analysis (folders only in source)
+        self.folders_in_source_table = QTableWidget()
+        self.folders_in_source_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.folders_in_source_table.setRowCount(1)
+        self.folders_in_source_table.setColumnCount(2)
+        self.folders_in_source_table.setHorizontalHeaderLabels(['Folders only in source directory', ' '])
+        move_to_bk_icon = QIcon('move_to_backup.png')
+        self.folders_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(move_to_bk_icon, " "))
+        self.folders_in_source_table.horizontalHeaderItem(1).setToolTip('Checked folders and their contents will be copied to backup')
+        self.style_table(self.folders_in_source_table)
+        self.folders_in_source_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.folders_in_source_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.folders_in_source_table.horizontalHeader().resizeSection(1, scrollbar_width)
+        
+
+
+        # folders_in_source_label = QLabel('Folders only in source directory')
+        # folders_in_source_hint = QLabel()
+        # folders_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
+        # folders_in_source_hint.setToolTip('Checked folders and their contents will be copied to backup')
+        # folders_in_source_hint.enterEvent = lambda event: self.show_explanation(folders_in_source_hint.toolTip())
+        # self.folders_in_source_list = QListWidget(self)
         folders_in_backup_label = QLabel('Folders only in backup directory')
         folders_in_backup_hint = QLabel()
         folders_in_backup_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
@@ -142,11 +161,12 @@ class BackupApp(QWidget):
         ## container for QListWidgets (folders)
         vbox_list_folders_source = QVBoxLayout()
         hbox_list_folders_source = QHBoxLayout()
-        hbox_list_folders_source.addWidget(folders_in_source_label)
-        hbox_list_folders_source.addWidget(folders_in_source_hint)
+        # hbox_list_folders_source.addWidget(folders_in_source_label)
+        # hbox_list_folders_source.addWidget(folders_in_source_hint)
         hbox_list_folders_source.addStretch()
         vbox_list_folders_source.addLayout(hbox_list_folders_source)
-        vbox_list_folders_source.addWidget(self.folders_in_source_list)
+        # vbox_list_folders_source.addWidget(self.folders_in_source_list)
+        vbox_list_folders_source.addWidget(self.folders_in_source_table)
 
         vbox_list_folders_backup = QVBoxLayout()
         hbox_list_folders_backup = QHBoxLayout()
@@ -213,7 +233,7 @@ class BackupApp(QWidget):
         ## complete layout
         self.setLayout(vbox)
 
-        self.setStyleSheet("QWidget { border: 1px solid blue; }")
+        # self.setStyleSheet("QWidget { border: 1px solid blue; }")
 
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
@@ -226,6 +246,33 @@ class BackupApp(QWidget):
         self.show()
 
 
+    def style_table(self, table):
+        # Set table header color
+        header = table.horizontalHeader()
+        stylesheet = "::section{Background-color:rgb(240,240,240)}"
+        header.setStyleSheet(stylesheet)
+
+        # Make header fit the contents
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        
+        # Make vertical scrollbar always visible
+        table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
+        # Make cells and headers behave like labels (not clickable, focusable, etc.)
+        table.setFocusPolicy(Qt.NoFocus)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setSelectionMode(QTableWidget.NoSelection)
+        table.horizontalHeader().setSectionsClickable(False)
+        table.verticalHeader().setSectionsClickable(False)
+
+        # Hide vertical header
+        table.verticalHeader().setVisible(False)
+
+        # Hide all grids
+        table.setShowGrid(False)
+        table.setFrameShape(QFrame.NoFrame)
+    
+    
     # File explorer for source directory
     def get_directory_to_backup(self):
         directory = QFileDialog.getExistingDirectory(self, 'Select Directory to Backup')
@@ -334,15 +381,15 @@ class BackupApp(QWidget):
     # Show paths for user decision in the UI
     def update_paths_lists(self):
         # Clear existing items
-        self.folders_in_source_list.clear()
+        # self.folders_in_source_list.clear()
         self.folders_in_backup_list.clear()
         self.files_in_source_list.clear()
         self.files_in_backup_list.clear()
         self.files_dates_list.clear()
 
         # Update folders only in source directory list
-        for folder in self.unique_folders_dir:
-            item = self.create_list_item(folder, self.directory_path, self.folders_in_source_list, checked=True)
+        # for folder in self.unique_folders_dir:
+        #     item = self.create_list_item(folder, self.directory_path, self.folders_in_source_list, checked=True)
 
         # Update folders only in backup directory list
         for folder in self.unique_folders_backup:
