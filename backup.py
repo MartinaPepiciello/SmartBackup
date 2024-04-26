@@ -32,9 +32,6 @@ class BackupApp(QWidget):
         fm = QFontMetrics(default_font)
         date_width = fm.width('Last modified in backup     ')
 
-        # Get question mark icon
-        # question_icon = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
-
         # Crearte section titles
         directories_title = QLabel('Choose the source and backup directories')
         files_title = QLabel('Choose which files to backup')
@@ -97,20 +94,6 @@ class BackupApp(QWidget):
         self.folders_in_backup_table.horizontalHeader().resizeSection(1, scrollbar_width)
         self.folders_in_backup_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
         self.folders_in_backup_table.horizontalHeader().resizeSection(2, scrollbar_width)
-        
-
-        # folders_in_source_label = QLabel('Folders only in source directory')
-        # folders_in_source_hint = QLabel()
-        # folders_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
-        # folders_in_source_hint.setToolTip('Checked folders and their contents will be copied to backup')
-        # folders_in_source_hint.enterEvent = lambda event: self.show_explanation(folders_in_source_hint.toolTip())
-        # self.folders_in_source_list = QListWidget(self)
-        # folders_in_backup_label = QLabel('Folders only in backup directory')
-        # folders_in_backup_hint = QLabel()
-        # folders_in_backup_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
-        # folders_in_backup_hint.setToolTip('Unchecked folders and their contents will be removed from backup')
-        # folders_in_backup_hint.enterEvent = lambda event: self.show_explanation(folders_in_backup_hint.toolTip())
-        # self.folders_in_backup_list = QListWidget(self)
 
         # Create QTableWidgets for file selection after analysis (files only in source)
         self.files_in_source_table = QTableWidget()
@@ -119,7 +102,6 @@ class BackupApp(QWidget):
         self.files_in_source_table.setColumnCount(3)
         self.files_in_source_table.setHorizontalHeaderLabels(['Files only in source directory', '', ''])
         self.files_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-
         self.files_in_source_table.horizontalHeaderItem(1).setToolTip('Checked files and their contents will remain in the source')
         self.files_in_source_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
         self.files_in_source_table.horizontalHeaderItem(2).setToolTip('Checked files and their contents will be copied to backup')
@@ -147,21 +129,6 @@ class BackupApp(QWidget):
         self.files_in_backup_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
         self.files_in_backup_table.horizontalHeader().resizeSection(2, scrollbar_width)
 
-
-        # Create QListWidgets for file selection after analysis, labels and explanatory messages
-        # files_in_source_label = QLabel('Files only in source directory')
-        # files_in_source_hint = QLabel()
-        # files_in_source_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width)))
-        # files_in_source_hint.setToolTip('Checked files will be copied to backup')
-        # files_in_source_hint.enterEvent = lambda event: self.show_explanation(files_in_source_hint.toolTip())
-        # self.files_in_source_list = QListWidget(self)
-        # files_in_backup_label = QLabel('Files only in backup directory')
-        # files_in_backup_hint = QLabel()
-        # files_in_backup_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width))) 
-        # files_in_backup_hint.setToolTip('Unchecked files will be removed from backup')
-        # files_in_backup_hint.enterEvent = lambda event: self.show_explanation(files_in_backup_hint.toolTip())
-        # self.files_in_backup_list = QListWidget(self)   
-
         # Create QListWidget for files with different dates modified
         self.files_dates_table = QTableWidget()
         self.files_dates_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
@@ -183,14 +150,6 @@ class BackupApp(QWidget):
             self.files_dates_table.horizontalHeader().resizeSection(i, scrollbar_width)
         self.files_dates_table.horizontalHeader().resizeSection(3, date_width)
         self.files_dates_table.horizontalHeader().resizeSection(6, date_width)
-
-
-        # files_dates_label = QLabel('Files with different dates modified')
-        # files_dates_hint = QLabel()
-        # files_dates_hint.setPixmap(question_icon.pixmap(QSize(scrollbar_width, scrollbar_width))) 
-        # files_dates_hint.setToolTip('If both versions are checked, they will be saved in backup with different names.\nIf only one version is checked, it will be saved in both source and backup.\nIf no version is checked, the one in backup will be deleted.')
-        # files_dates_hint.enterEvent = lambda event: self.show_explanation(files_dates_hint.toolTip())
-        # self.files_dates_list = QListWidget(self)
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -245,71 +204,22 @@ class BackupApp(QWidget):
         vbox.addWidget(files_title)
         files_title.setContentsMargins(0, scrollbar_width, 0, 0)
 
-        ## container for QListWidgets (folders)
-        # vbox_list_folders_source = QVBoxLayout()
-        # hbox_list_folders_source = QHBoxLayout()
-        # hbox_list_folders_source.addWidget(folders_in_source_label)
-        # hbox_list_folders_source.addWidget(folders_in_source_hint)
-        # hbox_list_folders_source.addStretch()
-        # vbox_list_folders_source.addLayout(hbox_list_folders_source)
-        # vbox_list_folders_source.addWidget(self.folders_in_source_list)
-        # vbox_list_folders_source.addWidget(self.folders_in_source_table)
-
-        # vbox_list_folders_backup = QVBoxLayout()
-        # hbox_list_folders_backup = QHBoxLayout()
-        # hbox_list_folders_backup.addWidget(folders_in_backup_label)
-        # hbox_list_folders_backup.addWidget(folders_in_backup_hint)
-        # hbox_list_folders_backup.addStretch()
-        # vbox_list_folders_backup.addLayout(hbox_list_folders_backup)
-        # vbox_list_folders_backup.addWidget(self.folders_in_backup_list)
-        # vbox_list_folders_backup.addWidget(self.folders_in_backup_table)
-
+        ## unique folders tables
         hbox_folders_lists = QHBoxLayout()
         hbox_folders_lists.addWidget(self.folders_in_source_table)
         hbox_folders_lists.addWidget(self.folders_in_backup_table)
         hbox_folders_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_folders_lists)
 
-        ## container for QListWidgets (files)
-        # vbox_list_files_source = QVBoxLayout()
-        # hbox_list_files_source = QHBoxLayout()
-        # hbox_list_files_source.addWidget(files_in_source_label)
-        # hbox_list_files_source.addWidget(files_in_source_hint)
-        # hbox_list_files_source.addStretch()
-        # vbox_list_files_source.addLayout(hbox_list_files_source)
-        # vbox_list_files_source.addWidget(self.files_in_source_list)
-
-        # vbox_list_files_backup = QVBoxLayout()
-        # hbox_list_files_backup = QHBoxLayout()
-        # hbox_list_files_backup.addWidget(files_in_backup_label)
-        # hbox_list_files_backup.addWidget(files_in_backup_hint)
-        # hbox_list_files_backup.addStretch()
-        # vbox_list_files_backup.addLayout(hbox_list_files_backup)
-        # vbox_list_files_backup.addWidget(self.files_in_backup_list)
-
+        # unique files tables
         hbox_files_lists = QHBoxLayout()
         hbox_files_lists.addWidget(self.files_in_source_table)
         hbox_files_lists.addWidget(self.files_in_backup_table)
         hbox_files_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_files_lists)
 
-        ## container for QListWidget of files with different dates
+        ## files with different dates
         hbox_list_files_date = QVBoxLayout()
-        # hbox_list_files_date = QHBoxLayout()
-        # hbox_list_files_date.addWidget(files_dates_label)
-        # hbox_list_files_date.addWidget(files_dates_hint)
-        # hbox_list_files_date.addStretch()
-        # vbox_list_files_date.addLayout(hbox_list_files_date)
-
-        # hbox_headers = QHBoxLayout()
-        # hbox_headers.addWidget(QLabel("File name"))
-        # hbox_headers.addWidget(QLabel('  '))
-        # hbox_headers.addWidget(QLabel("Last modified in source"))
-        # hbox_headers.addWidget(QLabel('  '))
-        # hbox_headers.addWidget(QLabel("Last modified in backup"))
-
-        # hbox_headers.setContentsMargins(scrollbar_width, 0, scrollbar_width, 0)
-        # vbox_list_files_date.addLayout(hbox_headers)
         hbox_list_files_date.addWidget(self.files_dates_table)
         hbox_list_files_date.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_list_files_date)
@@ -343,6 +253,7 @@ class BackupApp(QWidget):
 
         # Make header fit the contents
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         
         # Make vertical scrollbar always visible
         table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -377,11 +288,6 @@ class BackupApp(QWidget):
             self.backup_line_edit.setText(backup_location)
             self.backup_button.setEnabled(False)
 
-    
-    # Show hints tooltips
-    def show_explanation(self, message):
-        QToolTip.showText(QCursor.pos(), message)
-
 
     # Lists of paths for user decision
     unique_files_dir = []
@@ -406,7 +312,7 @@ class BackupApp(QWidget):
         for file_list in [self.unique_files_dir, self.unique_files_backup, self.different_dates, self.unique_folders_dir, self.unique_folders_backup]:
             file_list.clear()
         
-        # Commpare the two directories
+        # Compare the two directories
         self.compare(self.directory_path, self.backup_path)
 
         # Reset analyzing label
@@ -414,7 +320,7 @@ class BackupApp(QWidget):
         QApplication.processEvents()
 
         # Update QListWidgets
-        self.update_paths_lists()
+        self.update_paths_tables()
         
         # Enable backup button
         self.backup_button.setEnabled(True)
@@ -468,117 +374,103 @@ class BackupApp(QWidget):
 
     
     # Show paths for user decision in the UI
-    def update_paths_lists(self):
-        # Clear existing items
-        # self.folders_in_source_list.clear()
-        self.folders_in_backup_list.clear()
-        self.files_in_source_list.clear()
-        self.files_in_backup_list.clear()
-        self.files_dates_list.clear()
+    def update_paths_tables(self):
+        # Update folders only in source directory table
+        self.folders_in_source_table.setRowCount(len(self.unique_folders_dir))
+        for i, folder in enumerate(self.unique_folders_dir):
+            self.create_table_item(i, folder, self.directory_path, self.folders_in_source_table, checked=True)
 
-        # Update folders only in source directory list
-        # for folder in self.unique_folders_dir:
-        #     item = self.create_list_item(folder, self.directory_path, self.folders_in_source_list, checked=True)
-
-        # Update folders only in backup directory list
-        for folder in self.unique_folders_backup:
-            item = self.create_list_item(folder, self.backup_path, self.folders_in_backup_list)
+        # Update folders only in backup directory table
+        self.folders_in_backup_table.setRowCount(len(self.unique_folders_backup))
+        for i, folder in enumerate(self.unique_folders_backup):
+            self.create_table_item(i, folder, self.backup_path, self.folders_in_backup_table)
         
-        # Update files only in source directory list
-        for file in self.unique_files_dir:
-            item = self.create_list_item(file, self.directory_path, self.files_in_source_list, checked=True)
+        # Update files only in source directory table
+        self.files_in_source_table.setRowCount(len(self.unique_files_dir))
+        for i, file in enumerate(self.unique_files_dir):
+            self.create_table_item(i, file, self.directory_path, self.files_in_source_table, checked=True)
 
-        # Update files only in backup directory list
-        for file in self.unique_files_backup:
-            item = self.create_list_item(file, self.backup_path, self.files_in_backup_list)
+        # Update files only in backup directory table
+        self.files_in_backup_table.setRowCount(len(self.unique_files_backup))
+        for i, file in enumerate(self.unique_files_backup):
+            self.create_table_item(i, file, self.backup_path, self.files_in_backup_table)
 
         # Update files with different dates list
-        for file in self.different_dates:
-            item = self.create_list_item_date(file[0], self.directory_path, file[2], file[3])
+        self.files_dates_table.setRowCount(len(self.different_dates))
+        for i, file in enumerate(self.different_dates):
+            self.create_list_item_date(i, file[0], self.directory_path, file[2], file[3])
 
 
     # Create basic path list item for the UI, including icon, relative path and checkbox
-    def create_list_item(self, file_path, base_path, scroll_list, checked=False):
-        # Create a custom widget for each list item
-        item_widget = QWidget()
-
+    def create_table_item(self, row, file_path, base_path, table, checked=False):
         # System icon for the file
         fileInfo = QFileInfo(str(file_path))
         iconProvider = QFileIconProvider()
         icon = iconProvider.icon(fileInfo)
 
-        # Relative path label
-        relative_path_label = QLabel(str(file_path.relative_to(base_path)))
+        # Relative path with zero-width space character after each letter (for word breaking purposes)
+        relative_path_str = ''.join([c + '\u200B' for c in str(file_path.relative_to(base_path))])
+        table.setItem(row, 0, QTableWidgetItem(icon, relative_path_str))
 
-        # Checkbox
-        checkbox = QCheckBox()
-        checkbox.setChecked(checked)
+        # Checkboxes
+        checkbox1 = QTableWidgetItem()
+        checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox1.setCheckState(Qt.Checked)
+        table.setItem(row, 1, checkbox1)
 
-        # Arrange widgets in the custom widget
-        hbox_item = QHBoxLayout(item_widget)
-        hbox_item.addWidget(relative_path_label)
-        hbox_item.addWidget(checkbox, alignment=Qt.AlignRight)
-
-        # Create QListWidgetItem with the custom widget
-        list_item = QListWidgetItem()
-        list_item.setSizeHint(item_widget.sizeHint())  # Set the size hint for proper layout
-        list_item.setIcon(icon)
-
-        scroll_list.addItem(list_item)
-        scroll_list.setItemWidget(list_item, item_widget)
+        checkbox2 = QTableWidgetItem()
+        checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+        table.setItem(row, 2, checkbox2)
     
 
     # Create path list item to compare dates modified
-    def create_list_item_date(self, file_path, base_path, date_edited1, date_edited2):
-        # Create a custom widget for each list item
-        item_widget = QWidget()
-
+    def create_list_item_date(self, row, file_path, base_path, date_edited1, date_edited2):
         # System icon for the file
         fileInfo = QFileInfo(str(file_path))
         iconProvider = QFileIconProvider()
         icon = iconProvider.icon(fileInfo)
 
-        # Relative path label
-        relative_path_label = QLabel(str(file_path.relative_to(base_path)))
+        # Relative path with zero-width space character after each letter (for word breaking purposes)
+        relative_path_str = ''.join([c + '\u200B' for c in str(file_path.relative_to(base_path))])
+        self.files_dates_table.setItem(row, 0, QTableWidgetItem(icon, relative_path_str))
 
         # Check the checkbox corresponding to the most recent date
         checked = date_edited1 > date_edited2
 
         # Checkboxes
-        checkbox1 = QCheckBox()
-        checkbox2 = QCheckBox()
-        checkbox1.setChecked(checked)
-        checkbox2.setChecked(not checked)
+        checkbox1 = QTableWidgetItem()
+        checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox1.setCheckState(Qt.Checked)
+        self.files_dates_table.setItem(row, 1, checkbox1)
 
-        # Date labels
+        checkbox2 = QTableWidgetItem()
+        checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+        self.files_dates_table.setItem(row, 2, checkbox2)
+
+        checkbox3 = QTableWidgetItem()
+        checkbox3.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox3.setCheckState(Qt.Checked)
+        self.files_dates_table.setItem(row, 4, checkbox3)
+
+        checkbox4 = QTableWidgetItem()
+        checkbox4.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox4.setCheckState(Qt.Unchecked if checked else Qt.Checked)
+        self.files_dates_table.setItem(row, 5, checkbox4)
+
+        # Dates (most recent in bold)
         date_dt1 = datetime.utcfromtimestamp(date_edited1)
-        date_dt2 = datetime.utcfromtimestamp(date_edited2)
-        date_label1 = QLabel(date_dt1.strftime("%d/%m/%Y %H:%M"))
-        date_label2 = QLabel(date_dt2.strftime("%d/%m/%Y %H:%M"))
-
-        # Most recent date in bold
+        self.files_dates_table.setItem(row, 3, QTableWidgetItem(date_dt1.strftime("%d/%m/%Y %H:%M")))
         font1 = QFont()
-        font2 = QFont()
         font1.setBold(checked)
+        self.files_dates_table.item(row, 3).setFont(font1)
+
+        date_dt2 = datetime.utcfromtimestamp(date_edited2)
+        self.files_dates_table.setItem(row, 6, QTableWidgetItem(date_dt2.strftime("%d/%m/%Y %H:%M")))
+        font2 = QFont()
         font2.setBold(not checked)
-        date_label1.setFont(font1)
-        date_label2.setFont(font2)
-
-        # Arrange widgets in the custom widget
-        hbox_item = QHBoxLayout(item_widget)
-        hbox_item.addWidget(relative_path_label)
-        hbox_item.addWidget(checkbox1, alignment=Qt.AlignRight)
-        hbox_item.addWidget(date_label1)
-        hbox_item.addWidget(checkbox2, alignment=Qt.AlignRight)
-        hbox_item.addWidget(date_label2)
-
-        # Create QListWidgetItem with the custom widget
-        list_item = QListWidgetItem()
-        list_item.setSizeHint(item_widget.sizeHint())  # Set the size hint for proper layout
-        list_item.setIcon(icon)
-
-        self.files_dates_list.addItem(list_item)
-        self.files_dates_list.setItemWidget(list_item, item_widget)
+        self.files_dates_table.item(row, 6).setFont(font2)
     
     
     # Perform copy of selected items to backup and delete unselected items from backup
