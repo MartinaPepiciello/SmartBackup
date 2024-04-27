@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 from pathlib import Path
 from PyQt5.QtCore import Qt, QFileInfo, QSize
@@ -231,8 +231,6 @@ class BackupApp(QWidget):
         #  complete layout
         self.setLayout(vbox)
 
-        # self.setStyleSheet("QWidget { border: 1px solid blue; }")
-
         # Set window properties
         desktop = QDesktopWidget().screenGeometry()
         width = int(desktop.width() * 0.6)
@@ -245,10 +243,14 @@ class BackupApp(QWidget):
 
 
     def style_table(self, table):
+        '''
+        Styles common to all tables
+        '''
+        
         # Set table header color
         header = table.horizontalHeader()
-        # stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
-        stylesheet = "::section{Background-color:rgb(240,240,240);}"
+        stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
+        # stylesheet = "::section{Background-color:rgb(240,240,240);}"
         header.setStyleSheet(stylesheet)
 
         # Make headers fit the contents
@@ -273,16 +275,22 @@ class BackupApp(QWidget):
         table.setFrameShape(QFrame.NoFrame)
     
     
-    # File explorer for source directory
     def get_directory_to_backup(self):
+        '''
+        File explorer for source directory
+        '''
+
         directory = QFileDialog.getExistingDirectory(self, 'Select Directory to Backup')
         if directory:
             self.dir_line_edit.setText(directory)
             self.backup_button.setEnabled(False)
 
 
-    # File explorer for backup directory
     def get_backup_location(self):
+        '''
+        File explorer for backup directory
+        '''
+
         backup_location = QFileDialog.getExistingDirectory(self, 'Select Backup Location')
         if backup_location:
             self.backup_line_edit.setText(backup_location)
@@ -297,8 +305,11 @@ class BackupApp(QWidget):
     different_dates = []
 
 
-    # Compare source and backup directory to find differences
     def analyze(self):
+        '''
+        Compare source and backup directory to find differences
+        '''
+
         # Get paths
         directory = self.dir_line_edit.text()
         backup = self.backup_line_edit.text()
@@ -326,8 +337,11 @@ class BackupApp(QWidget):
         self.backup_button.setEnabled(True)
 
     
-    # Recursively compare two directories
     def compare(self, path1, path2):
+        '''
+        Recursively compare two directories
+        '''
+
         # Show which folder is being analyzed
         self.analyzing_label.setText('Analyzing ' + str(path1.relative_to(self.directory_path)))
         QApplication.processEvents()
@@ -373,8 +387,11 @@ class BackupApp(QWidget):
             self.compare(folder1, folder2)
 
     
-    # Show paths for user decision in the UI
     def update_paths_tables(self):
+        '''
+        Show paths for user decision in the UI
+        '''
+
         # Update folders only in source directory table
         self.folders_in_source_table.setRowCount(len(self.unique_folders_dir))
         for i, folder in enumerate(self.unique_folders_dir):
@@ -401,8 +418,11 @@ class BackupApp(QWidget):
             self.create_list_item_date(i, file[0], self.directory_path, file[2], file[3])
 
 
-    # Create basic path list item for the UI, including icon, relative path and checkbox
     def create_table_item(self, row, file_path, base_path, table, checked=False):
+        '''
+        Create basic path list item for the UI, including icon, relative path and checkbox
+        '''
+
         # System icon for the file
         fileInfo = QFileInfo(str(file_path))
         iconProvider = QFileIconProvider()
@@ -424,8 +444,11 @@ class BackupApp(QWidget):
         table.setItem(row, 2, checkbox2)
     
 
-    # Create path list item to compare dates modified
     def create_list_item_date(self, row, file_path, base_path, date_edited1, date_edited2):
+        '''
+        Create path list item to compare dates modified
+        '''
+
         # System icon for the file
         fileInfo = QFileInfo(str(file_path))
         iconProvider = QFileIconProvider()
@@ -460,21 +483,24 @@ class BackupApp(QWidget):
         self.files_dates_table.setItem(row, 5, checkbox4)
 
         # Dates (most recent in bold)
-        date_dt1 = datetime.utcfromtimestamp(date_edited1)
+        date_dt1 = datetime.fromtimestamp(date_edited1, timezone(timedelta(hours=1)))
         self.files_dates_table.setItem(row, 3, QTableWidgetItem(date_dt1.strftime("%d/%m/%Y %H:%M")))
         font1 = QFont()
         font1.setBold(checked)
         self.files_dates_table.item(row, 3).setFont(font1)
 
-        date_dt2 = datetime.utcfromtimestamp(date_edited2)
+        date_dt2 = datetime.fromtimestamp(date_edited2, timezone(timedelta(hours=1)))
         self.files_dates_table.setItem(row, 6, QTableWidgetItem(date_dt2.strftime("%d/%m/%Y %H:%M")))
         font2 = QFont()
         font2.setBold(not checked)
         self.files_dates_table.item(row, 6).setFont(font2)
     
     
-    # Perform copy of selected items to backup and delete unselected items from backup
     def backup(self):
+        '''
+        Perform copy of selected items and delete unselected items
+        '''
+
         # Initialize item counter for progress bar
         total_items = len(self.unique_folders_dir) + len(self.unique_folders_backup) + len(self.unique_files_dir) + len(self.unique_files_backup) + len(self.different_dates)
         processed_items = 0
@@ -498,7 +524,7 @@ class BackupApp(QWidget):
             checked = [self.folders_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = folder.relative_to(self.backup_path) # copy folder to source
-                destination_path = self.source_path / relative_path
+                destination_path = self.directory_path / relative_path
                 shutil.copytree(folder, destination_path)
             if not checked[0]:
                 shutil.rmtree(folder)
@@ -513,7 +539,7 @@ class BackupApp(QWidget):
                 relative_path = file.relative_to(self.directory_path) # copy file to backup
                 destination_path = self.backup_path / relative_path.parent
                 shutil.copy2(file, destination_path) 
-            if checked[0]:
+            if not checked[0]:
                 os.remove(file) # remove file from source
             processed_items += 1
             self.update_progress(processed_items, total_items)    
@@ -524,7 +550,7 @@ class BackupApp(QWidget):
             checked = [self.files_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = file.relative_to(self.backup_path) # copy file to source
-                destination_path = self.source_path / relative_path.parent
+                destination_path = self.directory_path / relative_path.parent
                 shutil.copy2(file, destination_path)
             if not checked[0]:
                 os.remove(file) # remove file from backup
@@ -560,12 +586,12 @@ class BackupApp(QWidget):
                 if not checked[0]:
                     os.remove(path1)
             elif checked[1:] == [True, True, False]:
-                date_dt1 = datetime.utcfromtimestamp(date1)
-                date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.utcfromtimestamp(date2)
-                date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1 = os.path.join(directory2, new_filename1)
@@ -575,12 +601,12 @@ class BackupApp(QWidget):
                 if not checked[0]:
                     os.remove(path1)
             elif [checked[0], checked[1], checked[3]] == [True, False, True]:
-                date_dt1 = datetime.utcfromtimestamp(date1)
-                date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.utcfromtimestamp(date2)
-                date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1 = os.path.join(directory1, new_filename1)
@@ -590,24 +616,26 @@ class BackupApp(QWidget):
                 if not checked[2]:
                     os.remove(path2)
             elif [checked[0], checked[1], checked[3]] == [True, True, True]:
-                date_dt1 = datetime.utcfromtimestamp(date1)
-                date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.utcfromtimestamp(date2)
-                date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1_dir = os.path.join(directory1, new_filename1)
-                new_path1_bk = os.path.join(directory2, new_filename1)
                 new_path2_dir = os.path.join(directory1, new_filename2)
                 os.rename(path1, new_path1_dir)
-                shutil.copy2(path1, new_path1_bk)
                 shutil.copy2(path2, new_path2_dir)
                 if checked[2]:
+                    new_path1_bk = os.path.join(directory2, new_filename1)
                     new_path2_bk = os.path.join(directory2, new_filename2)
+                    shutil.copy2(new_path1_dir, new_path1_bk)
                     os.rename(path2, new_path2_bk)
                 else:
+                    new_path1_bk = os.path.join(directory2, filename1)
+                    shutil.copy2(new_path1_dir, new_path1_bk)
                     os.remove(path2)
             elif checked == [False, True, False, True]:
                 temp_path = path1.with_name('temp')
@@ -615,66 +643,31 @@ class BackupApp(QWidget):
                 shutil.move(path2, path1)
                 shutil.move(temp_path, path2)
             elif checked == [False, True, True, True]:
-                date_dt1 = datetime.utcfromtimestamp(date1)
-                date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.utcfromtimestamp(date2)
-                date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
+                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
-                new_path1_src = os.path.join(directory1, new_filename1)
-                new_path2_dir = os.path.join(directory1, new_filename2)
+                new_path1_bk = os.path.join(directory2, new_filename1)
+                new_path2_dir = os.path.join(directory1, filename2)
                 new_path2_bk = os.path.join(directory2, new_filename2)
-                os.rename(path1, new_path1_src)
+                shutil.copy2(path1, new_path1_bk)
                 os.remove(path1)
                 shutil.copy2(path2, new_path2_dir)
                 os.rename(path2, new_path2_bk)
-                
-
-            
-
-
-            # # if both checkboxes are checked, save both files to backup with a suffix specifying the date modified
-            # if checkbox1.isChecked() and checkbox2.isChecked():
-            #     date_dt1 = datetime.utcfromtimestamp(date1)
-            #     date_dt2 = datetime.utcfromtimestamp(date2)
-            #     date_suffix1 = date_dt1.strftime("(%d-%m-%Y--%H-%M)")
-            #     date_suffix2 = date_dt2.strftime("(%d-%m-%Y--%H-%M)")
-
-            #     directory2, filename2 = os.path.split(path2)
-            #     new_filename2 = f"{os.path.splitext(filename2)[0]}{date_suffix2}{os.path.splitext(filename2)[1]}"
-            #     new_path2 = os.path.join(directory2, new_filename2)
-            #     os.rename(path2, new_path2)
-
-            #     directory1, filename1 = os.path.split(path1)
-            #     new_filename1 = f"{os.path.splitext(filename1)[0]}{date_suffix1}{os.path.splitext(filename1)[1]}"
-            #     new_path1 = os.path.join(directory2, new_filename1)
-            #     shutil.copy2(path1, new_path1)
-
-            # # if only checkbox1 is checked, delete existing file from backup and save file from source instead
-            # elif checkbox1.isChecked() and not checkbox2.isChecked():
-            #     os.remove(path2)
-            #     relative_path = path1.relative_to(self.directory_path)
-            #     destination_path = self.backup_path / relative_path.parent
-            #     shutil.copy2(path1, destination_path)
-
-            # # if only checkbox2 is checked, overwrite source version with backup version
-            # elif not checkbox1.isChecked() and checkbox2.isChecked():
-            #     os.remove(path1)
-            #     relative_path = path2.relative_to(self.backup_path)
-            #     destination_path = self.directory_path / relative_path.parent
-            #     shutil.copy2(path2, destination_path)
-
-            # # if no checkbox is checked, just delete existing file from backup
-            # else:
-            #     os.remove(path2)
 
             processed_items += 1
             self.update_progress(processed_items, total_items) 
 
 
     def update_progress(self, processed, total):
+        '''
+        Update progress bar
+        '''
+
         progress_percentage = int((processed / total) * 100)
         self.progress_bar.setValue(progress_percentage)
         QApplication.processEvents()
@@ -686,8 +679,6 @@ def run_app():
     app = QApplication(sys.argv)
     window = BackupApp(app)
     sys.exit(app.exec_())
-
-
 
 
 if __name__ == '__main__':
