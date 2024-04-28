@@ -25,13 +25,13 @@ class BackupApp(QWidget):
         '''
 
         # Get width of a scrollbar to use as spacing unit
-        self.scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
+        scrollbar_width = self.app.style().pixelMetric(QStyle.PM_ScrollBarExtent)
 
         # Get width of text for table column sizing
         default_font = QApplication.font()
         default_font.setBold(True)
         fm = QFontMetrics(default_font)
-        self.date_width = fm.width('Last modified in backup  ')
+        date_width = fm.width('Last modified in backup  ')
 
         # Crearte section titles
         directories_title = QLabel('Choose the source and backup directories')
@@ -60,66 +60,97 @@ class BackupApp(QWidget):
 
         # Create QTableWidgets for folder selection after analysis (folders only in source)
         self.folders_in_source_table = QTableWidget()
+        self.folders_in_source_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.folders_in_source_table.setRowCount(1)
         self.folders_in_source_table.setColumnCount(3)
-        self.style_table(self.folders_in_source_table)
         self.folders_in_source_table.setHorizontalHeaderLabels(['Folders only in source directory', '', ''])
         keep_in_src_icon = QIcon('keep_in_source.png')
         self.folders_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.folders_in_source_table.horizontalHeaderItem(1).setToolTip('Keep in source (folder and contents)')
+        self.folders_in_source_table.horizontalHeaderItem(1).setToolTip('Checked folders and their contents will remain in the source')
         move_to_bk_icon = QIcon('move_to_backup.png')
         self.folders_in_source_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.folders_in_source_table.horizontalHeaderItem(2).setToolTip('Copy to backup (folder and contents)')
-        
-        
+        self.folders_in_source_table.horizontalHeaderItem(2).setToolTip('Checked folders and their contents will be copied to backup')
+        self.style_table(self.folders_in_source_table)
+        self.folders_in_source_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.folders_in_source_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.folders_in_source_table.horizontalHeader().resizeSection(1, scrollbar_width)
+        self.folders_in_source_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.folders_in_source_table.horizontalHeader().resizeSection(2, scrollbar_width)
 
         # Create QTableWidgets for folder selection after analysis (folders only in backup)
         self.folders_in_backup_table = QTableWidget()
+        self.folders_in_backup_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.folders_in_backup_table.setRowCount(1)
         self.folders_in_backup_table.setColumnCount(3)
-        self.style_table(self.folders_in_backup_table)
         self.folders_in_backup_table.setHorizontalHeaderLabels(['Folders only in backup directory', '', ''])
         keep_in_bk_icon = QIcon('keep_in_backup.png')
         self.folders_in_backup_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_bk_icon, ''))
-        self.folders_in_backup_table.horizontalHeaderItem(1).setToolTip('Keep in backup (folder and contents)')
+        self.folders_in_backup_table.horizontalHeaderItem(1).setToolTip('Checked folders and their contents will remain in backup')
         move_to_src_icon = QIcon('move_to_source.png')
         self.folders_in_backup_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_src_icon, ''))
-        self.folders_in_backup_table.horizontalHeaderItem(2).setToolTip('Copy to source (folder and contents)')
-    
+        self.folders_in_backup_table.horizontalHeaderItem(2).setToolTip('Checked folders and their contents will be copied to source')
+        self.style_table(self.folders_in_backup_table)
+        self.folders_in_backup_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.folders_in_backup_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.folders_in_backup_table.horizontalHeader().resizeSection(1, scrollbar_width)
+        self.folders_in_backup_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.folders_in_backup_table.horizontalHeader().resizeSection(2, scrollbar_width)
 
         # Create QTableWidgets for file selection after analysis (files only in source)
         self.files_in_source_table = QTableWidget()
+        self.files_in_source_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.files_in_source_table.setRowCount(1)
         self.files_in_source_table.setColumnCount(3)
-        self.style_table(self.files_in_source_table)
         self.files_in_source_table.setHorizontalHeaderLabels(['Files only in source directory', '', ''])
         self.files_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.files_in_source_table.horizontalHeaderItem(1).setToolTip('Keep in source')
+        self.files_in_source_table.horizontalHeaderItem(1).setToolTip('Checked files and their contents will remain in the source')
         self.files_in_source_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.files_in_source_table.horizontalHeaderItem(2).setToolTip('Copy to backup')
-        
+        self.files_in_source_table.horizontalHeaderItem(2).setToolTip('Checked files and their contents will be copied to backup')
+        self.style_table(self.files_in_source_table)
+        self.files_in_source_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.files_in_source_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.files_in_source_table.horizontalHeader().resizeSection(1, scrollbar_width)
+        self.files_in_source_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.files_in_source_table.horizontalHeader().resizeSection(2, scrollbar_width)
 
         # Create QTableWidgets for file selection after analysis (file only in backup)
         self.files_in_backup_table = QTableWidget()
+        self.files_in_backup_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.files_in_backup_table.setRowCount(1)
         self.files_in_backup_table.setColumnCount(3)
-        self.style_table(self.files_in_backup_table)
         self.files_in_backup_table.setHorizontalHeaderLabels(['Files only in backup directory', '', ''])
         self.files_in_backup_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_bk_icon, ''))
         self.files_in_backup_table.horizontalHeaderItem(1).setToolTip('Checked files and their contents will remain in backup')
         self.files_in_backup_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_src_icon, ''))
         self.files_in_backup_table.horizontalHeaderItem(2).setToolTip('Checked files and their contents will be copied to source')
+        self.style_table(self.files_in_backup_table)
+        self.files_in_backup_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.files_in_backup_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
+        self.files_in_backup_table.horizontalHeader().resizeSection(1, scrollbar_width)
+        self.files_in_backup_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        self.files_in_backup_table.horizontalHeader().resizeSection(2, scrollbar_width)
 
         # Create QListWidget for files with different dates modified
         self.files_dates_table = QTableWidget()
+        self.files_dates_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.files_dates_table.setRowCount(1)
         self.files_dates_table.setColumnCount(7)
-        self.style_table(self.files_dates_table)
         self.files_dates_table.setHorizontalHeaderLabels(['Files with different dates modified', '', '', 'Last modified in source', '', '', 'Last modified in backup'])
         self.files_dates_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(1).setToolTip('Keep in source')
+        self.files_dates_table.horizontalHeaderItem(1).setToolTip('Checked files and their contents will remain in the source')
         self.files_dates_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(2).setToolTip('Copy to backup')
+        self.files_dates_table.horizontalHeaderItem(2).setToolTip('Checked files and their contents will be copied to backup')
         self.files_dates_table.setHorizontalHeaderItem(4, QTableWidgetItem(keep_in_bk_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(4).setToolTip('Keep in backup')
+        self.files_dates_table.horizontalHeaderItem(4).setToolTip('Checked files and their contents will remain in backup')
         self.files_dates_table.setHorizontalHeaderItem(5, QTableWidgetItem(move_to_src_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(5).setToolTip('Copy to source')
-    
+        self.files_dates_table.horizontalHeaderItem(5).setToolTip('Checked files and their contents will be copied to source')
+        self.style_table(self.files_dates_table)
+        self.files_dates_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        for i in range(1, 7):
+            self.files_dates_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Fixed)
+            self.files_dates_table.horizontalHeader().resizeSection(i, scrollbar_width)
+        self.files_dates_table.horizontalHeader().resizeSection(3, date_width)
+        self.files_dates_table.horizontalHeader().resizeSection(6, date_width)
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -172,26 +203,26 @@ class BackupApp(QWidget):
 
         #  files to backup title
         vbox.addWidget(files_title)
-        files_title.setContentsMargins(0, self.scrollbar_width, 0, 0)
+        files_title.setContentsMargins(0, scrollbar_width, 0, 0)
 
         #  unique folders tables
         hbox_folders_lists = QHBoxLayout()
         hbox_folders_lists.addWidget(self.folders_in_source_table)
         hbox_folders_lists.addWidget(self.folders_in_backup_table)
-        hbox_folders_lists.setContentsMargins(0, 0, 0, self.scrollbar_width)
+        hbox_folders_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_folders_lists)
 
         #  unique files tables
         hbox_files_lists = QHBoxLayout()
         hbox_files_lists.addWidget(self.files_in_source_table)
         hbox_files_lists.addWidget(self.files_in_backup_table)
-        hbox_files_lists.setContentsMargins(0, 0, 0, self.scrollbar_width)
+        hbox_files_lists.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_files_lists)
 
         #  files with different dates
         hbox_list_files_date = QVBoxLayout()
         hbox_list_files_date.addWidget(self.files_dates_table)
-        hbox_list_files_date.setContentsMargins(0, 0, 0, self.scrollbar_width)
+        hbox_list_files_date.setContentsMargins(0, 0, 0, scrollbar_width)
         vbox.addLayout(hbox_list_files_date)
 
         #  backup button and progress bar
@@ -216,9 +247,6 @@ class BackupApp(QWidget):
         '''
         Styles common to all tables
         '''
-
-        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-        table.setRowCount(1)
         
         # Set table header color
         header = table.horizontalHeader()
@@ -246,20 +274,6 @@ class BackupApp(QWidget):
         # Hide all grids
         table.setShowGrid(False)
         table.setFrameShape(QFrame.NoFrame)
-
-        # Set column widths
-        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        table.horizontalHeader().resizeSection(1, self.scrollbar_width)
-        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
-        table.horizontalHeader().resizeSection(2, self.scrollbar_width)
-        if table.columnCount == 7:
-            for i in range(3, 7):
-                table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Fixed)
-            table.horizontalHeader().resizeSection(3, self.date_width)
-            table.horizontalHeader().resizeSection(4, self.scrollbar_width)
-            table.horizontalHeader().resizeSection(5, self.scrollbar_width)
-            table.horizontalHeader().resizeSection(6, self.date_width)
     
     
     def get_directory_to_backup(self):
