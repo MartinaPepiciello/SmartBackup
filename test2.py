@@ -7,44 +7,46 @@ from PyQt5.QtCore import Qt
 
 
 class CustomHeaderView(QHeaderView):
-    def __init__(self, icon_mapping, text_mapping):
+    def __init__(self, icon_mapping, text_mapping, tooltip_mapping):
         super().__init__(Qt.Horizontal)
         self.icon_mapping = icon_mapping
         self.text_mapping = text_mapping
+        self.tooltip_mapping = tooltip_mapping
 
     def paintSection(self, painter, rect, logicalIndex):
         painter.save()
-        # super().paintSection(painter, rect, logicalIndex)
         painter.restore()
 
         if logicalIndex in self.icon_mapping:
             icon = QIcon(self.icon_mapping[logicalIndex])
             option = self.viewOptions()
             icon.paint(painter, rect, Qt.AlignRight, QIcon.Normal, QIcon.On)
-
-        if logicalIndex in self.text_mapping:
+        elif logicalIndex in self.text_mapping:
             text = self.text_mapping[logicalIndex]
             painter.drawText(rect, Qt.AlignCenter, text)
 
-        # painter.restore()
+        if logicalIndex in self.tooltip_mapping:
+            self.setToolTip(self.tooltip_mapping[logicalIndex])
+        else:
+            self.setToolTip("")
 
-class CheckBoxTableWidgetItem(QTableWidgetItem):
-    def __init__(self, checked=False):
-        super().__init__()
+# class CheckBoxTableWidgetItem(QTableWidgetItem):
+#     def __init__(self, checked=False):
+#         super().__init__()
 
-        self.checkbox_widget = QWidget()
-        layout = QHBoxLayout(self.checkbox_widget)
-        layout.setAlignment(Qt.AlignRight)  # Align checkbox to the right
+#         self.checkbox_widget = QWidget()
+#         layout = QHBoxLayout(self.checkbox_widget)
+#         layout.setAlignment(Qt.AlignRight)  # Align checkbox to the right
 
-        self.checkbox = QCheckBox()
-        self.checkbox.setChecked(checked)
-        layout.addWidget(self.checkbox)
+#         self.checkbox = QCheckBox()
+#         self.checkbox.setChecked(checked)
+#         layout.addWidget(self.checkbox)
 
-        # Set the widget as the cell widget
-        self.setData(Qt.DisplayRole, None)  # Remove the default text from the cell
-        self.setData(Qt.EditRole, None)
-        self.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        self.setCheckState(Qt.Unchecked)
+#         # Set the widget as the cell widget
+#         self.setData(Qt.DisplayRole, None)  # Remove the default text from the cell
+#         self.setData(Qt.EditRole, None)
+#         self.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+#         self.setCheckState(Qt.Unchecked)
 
 
 class MainWindow(QWidget):
@@ -74,20 +76,13 @@ class MainWindow(QWidget):
             # Add more mappings as needed for additional tables
         ]
 
-        for icon_mapping, text_mapping in zip(icon_mappings, text_mappings):
+        for icon_mapping, text_mapping, tooltip_mapping in zip(icon_mappings, text_mappings, text_mappings):
             table = QTableWidget()
             table.setColumnCount(4)  # Example: Create a table with 4 columns
             table.setRowCount(3)
-            header = CustomHeaderView(icon_mapping, text_mapping)
-            table.setHorizontalHeader(header)
+            header = CustomHeaderView(icon_mapping, text_mapping, tooltip_mapping)
+            table.setHorizontalHeader(CustomHeaderView(icon_mapping, text_mapping, tooltip_mapping))
 
-            # Set alignment for other columns
-            for i in range(table.columnCount()):
-                if i not in icon_mapping and i not in text_mapping:
-                    for j in range(table.rowCount()):
-                        item = table.item(j, i)
-                        if item is not None:
-                            item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             # Add checkboxes
             for i in range(table.rowCount()):
@@ -102,6 +97,8 @@ class MainWindow(QWidget):
 
                 # Set the widget as the cell widget for the current item
                 table.setCellWidget(i, 1, widget)
+
+                table.setItem(i, 0, QTableWidgetItem('dgth'))
 
             checkbox = table.cellWidget(1, 1).findChild(QCheckBox)
             if not checkbox.isChecked():

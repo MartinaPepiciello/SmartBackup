@@ -9,6 +9,42 @@ import shutil
 import sys
 
 
+class CustomHeaderView(QHeaderView):
+    def __init__(self, text_mapping, icon_mapping, tooltip_mapping, width_s, width_l=100):
+        super().__init__(Qt.Horizontal)
+        self.icon_mapping = icon_mapping
+        self.text_mapping = text_mapping
+        self.tooltip_mapping = tooltip_mapping
+        self.width_s = width_s
+        self.width_l = width_l
+
+    def paintSection(self, painter, rect, logicalIndex):
+        painter.save()
+        painter.restore()
+
+        if logicalIndex in self.icon_mapping:
+            icon = QIcon(self.icon_mapping[logicalIndex])
+            option = self.viewOptions()
+            icon.paint(painter, rect, Qt.AlignCenter, QIcon.Normal, QIcon.On)
+        elif logicalIndex in self.text_mapping:
+            text = self.text_mapping[logicalIndex]
+            painter.drawText(rect, Qt.AlignCenter, text)
+        
+
+        if logicalIndex in self.tooltip_mapping:
+            self.setToolTip(self.tooltip_mapping[logicalIndex])
+        else:
+            self.setToolTip("")
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.setSectionResizeMode(0, QHeaderView.Stretch)
+        for i in range(1, self.model().columnCount()):
+            self.setSectionResizeMode(i, QHeaderView.Fixed)
+            self.resizeSection(i, self.width_s)
+        if self.model().columnCount() >= 7:
+            self.resizeSection(3, self.width_l)
+            self.resizeSection(6, self.width_l)
 
 
 class BackupApp(QWidget):
@@ -61,65 +97,52 @@ class BackupApp(QWidget):
         # Create QTableWidgets for folder selection after analysis (folders only in source)
         self.folders_in_source_table = QTableWidget()
         self.folders_in_source_table.setColumnCount(3)
-        self.style_table(self.folders_in_source_table)
-        self.folders_in_source_table.setHorizontalHeaderLabels(['Folders only in source directory', '', ''])
-        keep_in_src_icon = QIcon('keep_in_source.png')
-        self.folders_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.folders_in_source_table.horizontalHeaderItem(1).setToolTip('Keep in source (folder and contents)')
-        move_to_bk_icon = QIcon('move_to_backup.png')
-        self.folders_in_source_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.folders_in_source_table.horizontalHeaderItem(2).setToolTip('Copy to backup (folder and contents)')
+        self.folders_in_source_table.setHorizontalHeader(CustomHeaderView(
+            {0: 'Folders only in source directory'}, 
+            {1: 'keep_in_source.png', 2: 'move_to_backup.png'}, 
+            {1: 'Keep in source (folder and contents)', 2: 'Copy to backup (folder and contents)'},
+            self.scrollbar_width))
+        self.style_table(self.folders_in_source_table)     
         
-        
-
         # Create QTableWidgets for folder selection after analysis (folders only in backup)
         self.folders_in_backup_table = QTableWidget()
         self.folders_in_backup_table.setColumnCount(3)
+        self.folders_in_backup_table.setHorizontalHeader(CustomHeaderView(
+            {0: 'Folders only in backup directory'}, 
+            {1: 'keep_in_backup.png', 2: 'move_to_source.png'}, 
+            {1: 'Keep in backup (folder and contents)', 2: 'Copy to source (folder and contents)'},
+            self.scrollbar_width))
         self.style_table(self.folders_in_backup_table)
-        self.folders_in_backup_table.setHorizontalHeaderLabels(['Folders only in backup directory', '', ''])
-        keep_in_bk_icon = QIcon('keep_in_backup.png')
-        self.folders_in_backup_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_bk_icon, ''))
-        self.folders_in_backup_table.horizontalHeaderItem(1).setToolTip('Keep in backup (folder and contents)')
-        move_to_src_icon = QIcon('move_to_source.png')
-        self.folders_in_backup_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_src_icon, ''))
-        self.folders_in_backup_table.horizontalHeaderItem(2).setToolTip('Copy to source (folder and contents)')
-    
 
         # Create QTableWidgets for file selection after analysis (files only in source)
         self.files_in_source_table = QTableWidget()
         self.files_in_source_table.setColumnCount(3)
-        self.style_table(self.files_in_source_table)
-        self.files_in_source_table.setHorizontalHeaderLabels(['Files only in source directory', '', ''])
-        self.files_in_source_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.files_in_source_table.horizontalHeaderItem(1).setToolTip('Keep in source')
-        self.files_in_source_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.files_in_source_table.horizontalHeaderItem(2).setToolTip('Copy to backup')
-        
+        self.files_in_source_table.setHorizontalHeader(CustomHeaderView(
+            {0: 'Files only in source directory'}, 
+            {1: 'keep_in_source.png', 2: 'move_to_backup.png'}, 
+            {1: 'Keep in source', 2: 'Copy to backup'},
+            self.scrollbar_width))
+        self.style_table(self.files_in_source_table)     
 
         # Create QTableWidgets for file selection after analysis (file only in backup)
         self.files_in_backup_table = QTableWidget()
         self.files_in_backup_table.setColumnCount(3)
+        self.files_in_backup_table.setHorizontalHeader(CustomHeaderView(
+            {0: 'Files only in backup directory'}, 
+            {1: 'keep_in_backup.png', 2: 'move_to_source.png'}, 
+            {1: 'Keep in backup', 2: 'Copy to source'},
+            self.scrollbar_width))
         self.style_table(self.files_in_backup_table)
-        self.files_in_backup_table.setHorizontalHeaderLabels(['Files only in backup directory', '', ''])
-        self.files_in_backup_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_bk_icon, ''))
-        self.files_in_backup_table.horizontalHeaderItem(1).setToolTip('Checked files and their contents will remain in backup')
-        self.files_in_backup_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_src_icon, ''))
-        self.files_in_backup_table.horizontalHeaderItem(2).setToolTip('Checked files and their contents will be copied to source')
 
         # Create QListWidget for files with different dates modified
         self.files_dates_table = QTableWidget()
         self.files_dates_table.setColumnCount(7)
+        self.files_dates_table.setHorizontalHeader(CustomHeaderView(
+            {0: 'Files with different dates modified', 3: 'Last modified in source', 6: 'Last modified in backup'}, 
+            {1: 'keep_in_source.png', 2: 'move_to_backup.png', 4: 'keep_in_backup.png', 5:'move_to_source.png'}, 
+            {1: 'Keep in source', 2: 'Copy to backup', 4: 'Keep in backup', 5: 'Copy to source'},
+            self.scrollbar_width, self.date_width))
         self.style_table(self.files_dates_table)
-        self.files_dates_table.setHorizontalHeaderLabels(['Files with different dates modified', '', '', 'Last modified in source', '', '', 'Last modified in backup'])
-        self.files_dates_table.setHorizontalHeaderItem(1, QTableWidgetItem(keep_in_src_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(1).setToolTip('Keep in source')
-        self.files_dates_table.setHorizontalHeaderItem(2, QTableWidgetItem(move_to_bk_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(2).setToolTip('Copy to backup')
-        self.files_dates_table.setHorizontalHeaderItem(4, QTableWidgetItem(keep_in_bk_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(4).setToolTip('Keep in backup')
-        self.files_dates_table.setHorizontalHeaderItem(5, QTableWidgetItem(move_to_src_icon, ''))
-        self.files_dates_table.horizontalHeaderItem(5).setToolTip('Copy to source')
-    
 
         # Create Backup button
         self.backup_button = QPushButton('Backup')
@@ -222,8 +245,8 @@ class BackupApp(QWidget):
         
         # Set table header color
         header = table.horizontalHeader()
-        stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
-        # stylesheet = "::section{Background-color:rgb(240,240,240);}"
+        # stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
+        stylesheet = "::section{Background-color:rgb(240,240,240); border: 1px solid #000}"
         header.setStyleSheet(stylesheet)
 
         # Make headers fit the contents
@@ -246,20 +269,6 @@ class BackupApp(QWidget):
         # Hide all grids
         table.setShowGrid(False)
         table.setFrameShape(QFrame.NoFrame)
-
-        # Set column widths
-        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        table.horizontalHeader().resizeSection(1, self.scrollbar_width)
-        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
-        table.horizontalHeader().resizeSection(2, self.scrollbar_width)
-        if table.columnCount == 7:
-            for i in range(3, 7):
-                table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Fixed)
-            table.horizontalHeader().resizeSection(3, self.date_width)
-            table.horizontalHeader().resizeSection(4, self.scrollbar_width)
-            table.horizontalHeader().resizeSection(5, self.scrollbar_width)
-            table.horizontalHeader().resizeSection(6, self.date_width)
     
     
     def get_directory_to_backup(self):
@@ -402,12 +411,12 @@ class BackupApp(QWidget):
         # Update files with different dates list
         self.files_dates_table.setRowCount(len(self.different_dates))
         for i, file in enumerate(self.different_dates):
-            self.create_list_item_date(i, file[0], self.directory_path, file[2], file[3])
+            self.create_table_item_date(i, file[0], self.directory_path, file[2], file[3])
 
 
     def create_table_item(self, row, file_path, base_path, table, checked=False):
         '''
-        Create basic path list item for the UI, including icon, relative path and checkbox
+        Create basic path table item for the UI, including icon, relative path and checkbox
         '''
 
         # System icon for the file
@@ -420,20 +429,36 @@ class BackupApp(QWidget):
         table.setItem(row, 0, QTableWidgetItem(icon, relative_path_str))
 
         # Checkboxes
-        checkbox1 = QTableWidgetItem()
-        checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox1.setCheckState(Qt.Checked)
-        table.setItem(row, 1, checkbox1)
+        # checkbox1 = QTableWidgetItem()
+        # checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox1.setCheckState(Qt.Checked)
+        # table.setItem(row, 1, checkbox1)
 
-        checkbox2 = QTableWidgetItem()
-        checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        table.setItem(row, 2, checkbox2)
+        # checkbox2 = QTableWidgetItem()
+        # checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+        # table.setItem(row, 2, checkbox2)
+        table.setCellWidget(row, 1, self.centered_checkbox(True))
+        table.setCellWidget(row, 2, self.centered_checkbox(checked))
+
+
+    def centered_checkbox(self, checked=True):
+        '''
+        Centered checkbox widget
+        '''
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        checkbox = QCheckBox()
+        checkbox.setChecked(checked)
+        layout.addWidget(checkbox)
+        return widget
     
 
-    def create_list_item_date(self, row, file_path, base_path, date_edited1, date_edited2):
+    def create_table_item_date(self, row, file_path, base_path, date_edited1, date_edited2):
         '''
-        Create path list item to compare dates modified
+        Create path table item to compare dates modified
         '''
 
         # System icon for the file
@@ -449,25 +474,29 @@ class BackupApp(QWidget):
         checked = date_edited1 > date_edited2
 
         # Checkboxes
-        checkbox1 = QTableWidgetItem()
-        checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox1.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        self.files_dates_table.setItem(row, 1, checkbox1)
+        self.files_dates_table.setCellWidget(row, 1, self.centered_checkbox(checked))
+        # checkbox1 = QTableWidgetItem()
+        # checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox1.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+        # self.files_dates_table.setItem(row, 1, checkbox1)
 
-        checkbox2 = QTableWidgetItem()
-        checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        self.files_dates_table.setItem(row, 2, checkbox2)
+        self.files_dates_table.setCellWidget(row, 2, self.centered_checkbox(checked))
+        # checkbox2 = QTableWidgetItem()
+        # checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+        # self.files_dates_table.setItem(row, 2, checkbox2)
 
-        checkbox3 = QTableWidgetItem()
-        checkbox3.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox3.setCheckState(Qt.Unchecked if checked else Qt.Checked)
-        self.files_dates_table.setItem(row, 4, checkbox3)
+        self.files_dates_table.setCellWidget(row, 4, self.centered_checkbox(not checked))
+        # checkbox3 = QTableWidgetItem()
+        # checkbox3.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox3.setCheckState(Qt.Unchecked if checked else Qt.Checked)
+        # self.files_dates_table.setItem(row, 4, checkbox3)
 
-        checkbox4 = QTableWidgetItem()
-        checkbox4.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        checkbox4.setCheckState(Qt.Unchecked if checked else Qt.Checked)
-        self.files_dates_table.setItem(row, 5, checkbox4)
+        self.files_dates_table.setCellWidget(row, 5, self.centered_checkbox(not checked))
+        # checkbox4 = QTableWidgetItem()
+        # checkbox4.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        # checkbox4.setCheckState(Qt.Unchecked if checked else Qt.Checked)
+        # self.files_dates_table.setItem(row, 5, checkbox4)
 
         # Dates (most recent in bold)
         date_dt1 = datetime.fromtimestamp(date_edited1, timezone(timedelta(hours=1)))
@@ -495,7 +524,8 @@ class BackupApp(QWidget):
         # Folders in source directory only
         #  checked = [keep in source, copy to backup]
         for i, folder in enumerate(self.unique_folders_dir):
-            checked = [self.folders_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
+            checked = [self.folders_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
+            # checked = [self.folders_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = folder.relative_to(self.directory_path) # copy folder to backup
                 destination_path = self.backup_path / relative_path
@@ -508,7 +538,8 @@ class BackupApp(QWidget):
         # Folders in backup directory only
         #  checked = [keep in backup, copy to source]
         for i, folder in enumerate(self.unique_folders_backup):
-            checked = [self.folders_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
+            checked = [self.folders_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
+            # checked = [self.folders_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = folder.relative_to(self.backup_path) # copy folder to source
                 destination_path = self.directory_path / relative_path
@@ -521,7 +552,8 @@ class BackupApp(QWidget):
         # Files in source directory only
         #  checked = [keep in source, copy to backup]
         for i, file in enumerate(self.unique_files_dir):
-            checked = [self.files_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
+            checked = [self.files_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
+            # checked = [self.files_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = file.relative_to(self.directory_path) # copy file to backup
                 destination_path = self.backup_path / relative_path.parent
@@ -534,7 +566,8 @@ class BackupApp(QWidget):
         # Files in backup directory only
         #  checked = [keep in backup, copy to source]
         for i, file in enumerate(self.unique_files_backup):
-            checked = [self.files_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
+            checked = [self.files_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
+            # checked = [self.files_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = file.relative_to(self.backup_path) # copy file to source
                 destination_path = self.directory_path / relative_path.parent
@@ -548,7 +581,8 @@ class BackupApp(QWidget):
         #  checked = [keep in source, copy to backup, keep in backup, copy to source]
         for i, file in enumerate(self.different_dates):
             path1, path2, date1, date2 = file
-            checked = [self.files_dates_table.item(i, col).checkState() == Qt.Checked for col in [1, 2, 4, 5]]
+            checked = [self.files_dates_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2, 4, 5]]
+            # checked = [self.files_dates_table.item(i, col).checkState() == Qt.Checked for col in [1, 2, 4, 5]]
 
             if [checked[0], checked[1], checked[3]] == [False, False, False]:
                 os.remove(path1)

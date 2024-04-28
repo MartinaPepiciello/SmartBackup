@@ -8,4 +8,4 @@ OK  fixed width for labels (file names) in file lists
 OK  DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
 OK  for files/folders only in backup add option to also copy to source
 OK  custom icon
-right alignment of checkbox columns
+OK  right alignment of checkbox columns
