@@ -1,3 +1,4 @@
+import ctypes
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QHBoxLayout, QWidget, QHeaderView, QAbstractScrollArea
 from PyQt5.QtGui import QIcon
@@ -9,8 +10,6 @@ from PyQt5.QtWidgets import QStyle
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtGui import QFont
-
-
 
 
 
@@ -110,7 +109,13 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    myappid = u'mycompany.myproduct.subproduct.version' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
     app = QApplication(sys.argv)
+    app_icon = QIcon('pd.jpg')
+    app.setWindowIcon(app_icon)
     mainWindow = MainWindow()
+    mainWindow.setWindowIcon(app_icon)
     mainWindow.show()
     sys.exit(app.exec_())

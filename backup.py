@@ -1,3 +1,4 @@
+import ctypes
 from datetime import datetime, timezone, timedelta
 import os
 from pathlib import Path
@@ -675,12 +676,12 @@ class BackupApp(QWidget):
 
 
 
-def run_app():
+if __name__ == '__main__':
+    myappid = u'mycompany.myproduct.subproduct.version' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon('keep_in_source.png'))
     window = BackupApp(app)
     sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    run_app()
 
