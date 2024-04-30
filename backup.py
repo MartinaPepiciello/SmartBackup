@@ -2,14 +2,18 @@ import ctypes
 from datetime import datetime, timezone, timedelta
 import os
 from pathlib import Path
-from PyQt5.QtCore import Qt, QFileInfo, QSize
+from PyQt5.QtCore import Qt, QFileInfo
 from PyQt5.QtGui import QCursor, QFont, QFontMetrics, QIcon
-from PyQt5.QtWidgets import QAbstractScrollArea, QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QProgressBar, QStyle, QTableWidget, QTableWidgetItem, QToolTip, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QAbstractScrollArea, QApplication, QCheckBox, QDesktopWidget, QFileDialog, QFileIconProvider, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QPushButton, QProgressBar, QStyle, QTableWidget, QTableWidgetItem, QToolTip, QVBoxLayout, QWidget
 import shutil
 import sys
 
 
 class CustomHeaderView(QHeaderView):
+    '''
+    Custom header for file names tables, including text, center-aligned icons and tooltips
+    '''
+
     def __init__(self, text_mapping, icon_mapping, tooltip_mapping, width_s, width_l=100):
         super().__init__(Qt.Horizontal)
         self.icon_mapping = icon_mapping
@@ -22,27 +26,27 @@ class CustomHeaderView(QHeaderView):
         painter.save()
         painter.restore()
 
-        if logicalIndex in self.icon_mapping:
+        if logicalIndex in self.icon_mapping: # paint icon in the middle
             icon = QIcon(self.icon_mapping[logicalIndex])
             option = self.viewOptions()
             icon.paint(painter, rect, Qt.AlignCenter, QIcon.Normal, QIcon.On)
-        elif logicalIndex in self.text_mapping:
+        elif logicalIndex in self.text_mapping: # draw text normally
             text = self.text_mapping[logicalIndex]
             painter.drawText(rect, Qt.AlignCenter, text)
         
 
-        if logicalIndex in self.tooltip_mapping:
+        if logicalIndex in self.tooltip_mapping: # display tooltip
             self.setToolTip(self.tooltip_mapping[logicalIndex])
         else:
             self.setToolTip("")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.setSectionResizeMode(0, QHeaderView.Stretch)
-        for i in range(1, self.model().columnCount()):
+        self.setSectionResizeMode(0, QHeaderView.Stretch) # first column: as large as possible
+        for i in range(1, self.model().columnCount()): # narrow columns for icons/checkboxes
             self.setSectionResizeMode(i, QHeaderView.Fixed)
             self.resizeSection(i, self.width_s)
-        if self.model().columnCount() >= 7:
+        if self.model().columnCount() >= 7: # wider columns for dates
             self.resizeSection(3, self.width_l)
             self.resizeSection(6, self.width_l)
 
@@ -99,7 +103,7 @@ class BackupApp(QWidget):
         self.folders_in_source_table.setColumnCount(3)
         self.folders_in_source_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Folders only in source directory'}, 
-            {1: 'keep_in_source.png', 2: 'move_to_backup.png'}, 
+            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png'}, 
             {1: 'Keep in source (folder and contents)', 2: 'Copy to backup (folder and contents)'},
             self.scrollbar_width))
         self.style_table(self.folders_in_source_table)     
@@ -109,7 +113,7 @@ class BackupApp(QWidget):
         self.folders_in_backup_table.setColumnCount(3)
         self.folders_in_backup_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Folders only in backup directory'}, 
-            {1: 'keep_in_backup.png', 2: 'move_to_source.png'}, 
+            {1: 'icons/keep_in_backup.png', 2: 'icons/move_to_source.png'}, 
             {1: 'Keep in backup (folder and contents)', 2: 'Copy to source (folder and contents)'},
             self.scrollbar_width))
         self.style_table(self.folders_in_backup_table)
@@ -119,7 +123,7 @@ class BackupApp(QWidget):
         self.files_in_source_table.setColumnCount(3)
         self.files_in_source_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files only in source directory'}, 
-            {1: 'keep_in_source.png', 2: 'move_to_backup.png'}, 
+            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png'}, 
             {1: 'Keep in source', 2: 'Copy to backup'},
             self.scrollbar_width))
         self.style_table(self.files_in_source_table)     
@@ -129,7 +133,7 @@ class BackupApp(QWidget):
         self.files_in_backup_table.setColumnCount(3)
         self.files_in_backup_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files only in backup directory'}, 
-            {1: 'keep_in_backup.png', 2: 'move_to_source.png'}, 
+            {1: 'icons/keep_in_backup.png', 2: 'icons/move_to_source.png'}, 
             {1: 'Keep in backup', 2: 'Copy to source'},
             self.scrollbar_width))
         self.style_table(self.files_in_backup_table)
@@ -139,7 +143,7 @@ class BackupApp(QWidget):
         self.files_dates_table.setColumnCount(7)
         self.files_dates_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files with different dates modified', 3: 'Last modified in source', 6: 'Last modified in backup'}, 
-            {1: 'keep_in_source.png', 2: 'move_to_backup.png', 4: 'keep_in_backup.png', 5:'move_to_source.png'}, 
+            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png', 4: 'icons/keep_in_backup.png', 5:'icons/move_to_source.png'}, 
             {1: 'Keep in source', 2: 'Copy to backup', 4: 'Keep in backup', 5: 'Copy to source'},
             self.scrollbar_width, self.date_width))
         self.style_table(self.files_dates_table)
@@ -245,8 +249,7 @@ class BackupApp(QWidget):
         
         # Set table header color
         header = table.horizontalHeader()
-        # stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
-        stylesheet = "::section{Background-color:rgb(240,240,240); border: 1px solid #000}"
+        stylesheet = "::section{Background-color:rgb(240,240,240); border:0}"
         header.setStyleSheet(stylesheet)
 
         # Make headers fit the contents
@@ -429,15 +432,6 @@ class BackupApp(QWidget):
         table.setItem(row, 0, QTableWidgetItem(icon, relative_path_str))
 
         # Checkboxes
-        # checkbox1 = QTableWidgetItem()
-        # checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox1.setCheckState(Qt.Checked)
-        # table.setItem(row, 1, checkbox1)
-
-        # checkbox2 = QTableWidgetItem()
-        # checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        # table.setItem(row, 2, checkbox2)
         table.setCellWidget(row, 1, self.centered_checkbox(True))
         table.setCellWidget(row, 2, self.centered_checkbox(checked))
 
@@ -475,28 +469,9 @@ class BackupApp(QWidget):
 
         # Checkboxes
         self.files_dates_table.setCellWidget(row, 1, self.centered_checkbox(checked))
-        # checkbox1 = QTableWidgetItem()
-        # checkbox1.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox1.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        # self.files_dates_table.setItem(row, 1, checkbox1)
-
         self.files_dates_table.setCellWidget(row, 2, self.centered_checkbox(checked))
-        # checkbox2 = QTableWidgetItem()
-        # checkbox2.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox2.setCheckState(Qt.Checked if checked else Qt.Unchecked)
-        # self.files_dates_table.setItem(row, 2, checkbox2)
-
         self.files_dates_table.setCellWidget(row, 4, self.centered_checkbox(not checked))
-        # checkbox3 = QTableWidgetItem()
-        # checkbox3.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox3.setCheckState(Qt.Unchecked if checked else Qt.Checked)
-        # self.files_dates_table.setItem(row, 4, checkbox3)
-
         self.files_dates_table.setCellWidget(row, 5, self.centered_checkbox(not checked))
-        # checkbox4 = QTableWidgetItem()
-        # checkbox4.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-        # checkbox4.setCheckState(Qt.Unchecked if checked else Qt.Checked)
-        # self.files_dates_table.setItem(row, 5, checkbox4)
 
         # Dates (most recent in bold)
         date_dt1 = datetime.fromtimestamp(date_edited1, timezone(timedelta(hours=1)))
@@ -525,7 +500,6 @@ class BackupApp(QWidget):
         #  checked = [keep in source, copy to backup]
         for i, folder in enumerate(self.unique_folders_dir):
             checked = [self.folders_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            # checked = [self.folders_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = folder.relative_to(self.directory_path) # copy folder to backup
                 destination_path = self.backup_path / relative_path
@@ -539,7 +513,6 @@ class BackupApp(QWidget):
         #  checked = [keep in backup, copy to source]
         for i, folder in enumerate(self.unique_folders_backup):
             checked = [self.folders_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            # checked = [self.folders_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = folder.relative_to(self.backup_path) # copy folder to source
                 destination_path = self.directory_path / relative_path
@@ -553,7 +526,6 @@ class BackupApp(QWidget):
         #  checked = [keep in source, copy to backup]
         for i, file in enumerate(self.unique_files_dir):
             checked = [self.files_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            # checked = [self.files_in_source_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = file.relative_to(self.directory_path) # copy file to backup
                 destination_path = self.backup_path / relative_path.parent
@@ -567,7 +539,6 @@ class BackupApp(QWidget):
         #  checked = [keep in backup, copy to source]
         for i, file in enumerate(self.unique_files_backup):
             checked = [self.files_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            # checked = [self.files_in_backup_table.item(i, col).checkState() == Qt.Checked for col in [1, 2]]
             if checked[1]:
                 relative_path = file.relative_to(self.backup_path) # copy file to source
                 destination_path = self.directory_path / relative_path.parent
@@ -582,7 +553,6 @@ class BackupApp(QWidget):
         for i, file in enumerate(self.different_dates):
             path1, path2, date1, date2 = file
             checked = [self.files_dates_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2, 4, 5]]
-            # checked = [self.files_dates_table.item(i, col).checkState() == Qt.Checked for col in [1, 2, 4, 5]]
 
             if [checked[0], checked[1], checked[3]] == [False, False, False]:
                 os.remove(path1)
@@ -608,11 +578,11 @@ class BackupApp(QWidget):
                     os.remove(path1)
             elif checked[1:] == [True, True, False]:
                 date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
+                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
                 date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
+                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1 = os.path.join(directory2, new_filename1)
@@ -623,26 +593,26 @@ class BackupApp(QWidget):
                     os.remove(path1)
             elif [checked[0], checked[1], checked[3]] == [True, False, True]:
                 date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
+                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
                 date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
+                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1 = os.path.join(directory1, new_filename1)
-                new_path2 = os.path.join(directory2, new_filename2)
+                new_path2 = os.path.join(directory1, new_filename2)
                 os.rename(path1, new_path1)
                 shutil.copy2(path2, new_path2)
                 if not checked[2]:
                     os.remove(path2)
             elif [checked[0], checked[1], checked[3]] == [True, True, True]:
                 date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
+                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
                 date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
+                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1_dir = os.path.join(directory1, new_filename1)
@@ -655,9 +625,7 @@ class BackupApp(QWidget):
                     shutil.copy2(new_path1_dir, new_path1_bk)
                     os.rename(path2, new_path2_bk)
                 else:
-                    new_path1_bk = os.path.join(directory2, filename1)
-                    shutil.copy2(new_path1_dir, new_path1_bk)
-                    os.remove(path2)
+                    shutil.copy2(new_path1_dir, path2)
             elif checked == [False, True, False, True]:
                 temp_path = path1.with_name('temp')
                 shutil.move(path1, temp_path)
@@ -665,11 +633,11 @@ class BackupApp(QWidget):
                 shutil.move(temp_path, path2)
             elif checked == [False, True, True, True]:
                 date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%d-%m-%Y_%H-%M")
+                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
                 directory1, filename1 = os.path.split(path1)
                 new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
                 date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%d-%m-%Y_%H-%M")
+                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
                 directory2, filename2 = os.path.split(path2)
                 new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                 new_path1_bk = os.path.join(directory2, new_filename1)
@@ -697,11 +665,11 @@ class BackupApp(QWidget):
 
 
 if __name__ == '__main__':
-    myappid = u'mycompany.myproduct.subproduct.version' # arbitrary string
+    myappid = u'mycompany.myproduct.subproduct.version' # arbitrary string to make the app icon correctly show in the taskbar
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon('keep_in_source.png'))
+    app.setWindowIcon(QIcon('icons/keep_in_source.png'))
     window = BackupApp(app)
     sys.exit(app.exec_())
 
