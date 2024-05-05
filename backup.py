@@ -500,12 +500,15 @@ class BackupApp(QWidget):
         #  checked = [keep in source, copy to backup]
         for i, folder in enumerate(self.unique_folders_dir):
             checked = [self.folders_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            if checked[1]:
-                relative_path = folder.relative_to(self.directory_path) # copy folder to backup
-                destination_path = self.backup_path / relative_path
-                shutil.copytree(folder, destination_path)
-            if not checked[0]:
-                shutil.rmtree(folder) # remove folder from source
+            try:
+                if checked[1]:
+                    relative_path = folder.relative_to(self.directory_path) # copy folder to backup
+                    destination_path = self.backup_path / relative_path
+                    shutil.copytree(folder, destination_path)
+                if not checked[0]:
+                    shutil.rmtree(folder) # remove folder from source
+            except PermissionError:
+                print(f'Permission error on {str(folder)}')
             processed_items += 1
             self.update_progress(processed_items, total_items)  
 
@@ -513,12 +516,15 @@ class BackupApp(QWidget):
         #  checked = [keep in backup, copy to source]
         for i, folder in enumerate(self.unique_folders_backup):
             checked = [self.folders_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            if checked[1]:
-                relative_path = folder.relative_to(self.backup_path) # copy folder to source
-                destination_path = self.directory_path / relative_path
-                shutil.copytree(folder, destination_path)
-            if not checked[0]:
-                shutil.rmtree(folder)
+            try:
+                if checked[1]:
+                    relative_path = folder.relative_to(self.backup_path) # copy folder to source
+                    destination_path = self.directory_path / relative_path
+                    shutil.copytree(folder, destination_path)
+                if not checked[0]:
+                    shutil.rmtree(folder)
+            except PermissionError:
+                print(f'Permission error on {str(folder)}')
             processed_items += 1
             self.update_progress(processed_items, total_items) 
         
@@ -526,12 +532,15 @@ class BackupApp(QWidget):
         #  checked = [keep in source, copy to backup]
         for i, file in enumerate(self.unique_files_dir):
             checked = [self.files_in_source_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            if checked[1]:
-                relative_path = file.relative_to(self.directory_path) # copy file to backup
-                destination_path = self.backup_path / relative_path.parent
-                shutil.copy2(file, destination_path) 
-            if not checked[0]:
-                os.remove(file) # remove file from source
+            try:
+                if checked[1]:
+                    relative_path = file.relative_to(self.directory_path) # copy file to backup
+                    destination_path = self.backup_path / relative_path.parent
+                    shutil.copy2(file, destination_path) 
+                if not checked[0]:
+                    os.remove(file) # remove file from source
+            except PermissionError:
+                print(f'Permission error on {str(file)}')
             processed_items += 1
             self.update_progress(processed_items, total_items)    
 
@@ -539,12 +548,15 @@ class BackupApp(QWidget):
         #  checked = [keep in backup, copy to source]
         for i, file in enumerate(self.unique_files_backup):
             checked = [self.files_in_backup_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2]]
-            if checked[1]:
-                relative_path = file.relative_to(self.backup_path) # copy file to source
-                destination_path = self.directory_path / relative_path.parent
-                shutil.copy2(file, destination_path)
-            if not checked[0]:
-                os.remove(file) # remove file from backup
+            try:
+                if checked[1]:
+                    relative_path = file.relative_to(self.backup_path) # copy file to source
+                    destination_path = self.directory_path / relative_path.parent
+                    shutil.copy2(file, destination_path)
+                if not checked[0]:
+                    os.remove(file) # remove file from backup
+            except PermissionError:
+                print(f'Permission error on {str(file)}')
             processed_items += 1
             self.update_progress(processed_items, total_items) 
 
@@ -554,99 +566,102 @@ class BackupApp(QWidget):
             path1, path2, date1, date2 = file
             checked = [self.files_dates_table.cellWidget(i, col).findChild(QCheckBox).isChecked() for col in [1, 2, 4, 5]]
 
-            if [checked[0], checked[1], checked[3]] == [False, False, False]:
-                os.remove(path1)
-                if not checked[2]: 
-                    os.remove(path2)
-            elif checked == [True, False, False, False]:
-                os.remove(path2)
-            elif [checked[0], checked[1], checked[3]] == [False, False, True]:
-                os.remove(path1)
-                directory1, filename1 = os.path.split(path1)
-                directory2, filename2 = os.path.split(path2)
-                new_path2 = os.path.join(directory1, filename2)
-                shutil.copy2(path2, new_path2)
-                if not checked[2]:
-                    os.remove(path2)
-            elif checked[1:] == [True, False, False]:
-                os.remove(path2)
-                directory1, filename1 = os.path.split(path1)
-                directory2, filename2 = os.path.split(path2)
-                new_path1 = os.path.join(directory2, filename1)
-                shutil.copy2(path1, new_path1)
-                if not checked[0]:
+            try:
+                if [checked[0], checked[1], checked[3]] == [False, False, False]:
                     os.remove(path1)
-            elif checked[1:] == [True, True, False]:
-                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
-                directory1, filename1 = os.path.split(path1)
-                new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
-                directory2, filename2 = os.path.split(path2)
-                new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
-                new_path1 = os.path.join(directory2, new_filename1)
-                new_path2 = os.path.join(directory2, new_filename2)
-                os.rename(path2, new_path2)
-                shutil.copy2(path1, new_path1)
-                if not checked[0]:
-                    os.remove(path1)
-            elif [checked[0], checked[1], checked[3]] == [True, False, True]:
-                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
-                directory1, filename1 = os.path.split(path1)
-                new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
-                directory2, filename2 = os.path.split(path2)
-                new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
-                new_path1 = os.path.join(directory1, new_filename1)
-                new_path2 = os.path.join(directory1, new_filename2)
-                os.rename(path1, new_path1)
-                shutil.copy2(path2, new_path2)
-                if not checked[2]:
+                    if not checked[2]: 
+                        os.remove(path2)
+                elif checked == [True, False, False, False]:
                     os.remove(path2)
-            elif [checked[0], checked[1], checked[3]] == [True, True, True]:
-                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
-                directory1, filename1 = os.path.split(path1)
-                new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
-                directory2, filename2 = os.path.split(path2)
-                new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
-                new_path1_dir = os.path.join(directory1, new_filename1)
-                new_path2_dir = os.path.join(directory1, new_filename2)
-                os.rename(path1, new_path1_dir)
-                shutil.copy2(path2, new_path2_dir)
-                if checked[2]:
+                elif [checked[0], checked[1], checked[3]] == [False, False, True]:
+                    os.remove(path1)
+                    directory1, filename1 = os.path.split(path1)
+                    directory2, filename2 = os.path.split(path2)
+                    new_path2 = os.path.join(directory1, filename2)
+                    shutil.copy2(path2, new_path2)
+                    if not checked[2]:
+                        os.remove(path2)
+                elif checked[1:] == [True, False, False]:
+                    os.remove(path2)
+                    directory1, filename1 = os.path.split(path1)
+                    directory2, filename2 = os.path.split(path2)
+                    new_path1 = os.path.join(directory2, filename1)
+                    shutil.copy2(path1, new_path1)
+                    if not checked[0]:
+                        os.remove(path1)
+                elif checked[1:] == [True, True, False]:
+                    date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                    date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
+                    directory1, filename1 = os.path.split(path1)
+                    new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
+                    date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                    date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
+                    directory2, filename2 = os.path.split(path2)
+                    new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
+                    new_path1 = os.path.join(directory2, new_filename1)
+                    new_path2 = os.path.join(directory2, new_filename2)
+                    os.rename(path2, new_path2)
+                    shutil.copy2(path1, new_path1)
+                    if not checked[0]:
+                        os.remove(path1)
+                elif [checked[0], checked[1], checked[3]] == [True, False, True]:
+                    date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                    date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
+                    directory1, filename1 = os.path.split(path1)
+                    new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
+                    date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                    date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
+                    directory2, filename2 = os.path.split(path2)
+                    new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
+                    new_path1 = os.path.join(directory1, new_filename1)
+                    new_path2 = os.path.join(directory1, new_filename2)
+                    os.rename(path1, new_path1)
+                    shutil.copy2(path2, new_path2)
+                    if not checked[2]:
+                        os.remove(path2)
+                elif [checked[0], checked[1], checked[3]] == [True, True, True]:
+                    date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                    date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
+                    directory1, filename1 = os.path.split(path1)
+                    new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
+                    date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                    date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
+                    directory2, filename2 = os.path.split(path2)
+                    new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
+                    new_path1_dir = os.path.join(directory1, new_filename1)
+                    new_path2_dir = os.path.join(directory1, new_filename2)
+                    os.rename(path1, new_path1_dir)
+                    shutil.copy2(path2, new_path2_dir)
+                    if checked[2]:
+                        new_path1_bk = os.path.join(directory2, new_filename1)
+                        new_path2_bk = os.path.join(directory2, new_filename2)
+                        shutil.copy2(new_path1_dir, new_path1_bk)
+                        os.rename(path2, new_path2_bk)
+                    else:
+                        shutil.copy2(new_path1_dir, path2)
+                elif checked == [False, True, False, True]:
+                    temp_path = path1.with_name('temp')
+                    shutil.move(path1, temp_path)
+                    shutil.move(path2, path1)
+                    shutil.move(temp_path, path2)
+                elif checked == [False, True, True, True]:
+                    date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
+                    date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
+                    directory1, filename1 = os.path.split(path1)
+                    new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
+                    date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
+                    date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
+                    directory2, filename2 = os.path.split(path2)
+                    new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
                     new_path1_bk = os.path.join(directory2, new_filename1)
+                    new_path2_dir = os.path.join(directory1, filename2)
                     new_path2_bk = os.path.join(directory2, new_filename2)
-                    shutil.copy2(new_path1_dir, new_path1_bk)
+                    shutil.copy2(path1, new_path1_bk)
+                    os.remove(path1)
+                    shutil.copy2(path2, new_path2_dir)
                     os.rename(path2, new_path2_bk)
-                else:
-                    shutil.copy2(new_path1_dir, path2)
-            elif checked == [False, True, False, True]:
-                temp_path = path1.with_name('temp')
-                shutil.move(path1, temp_path)
-                shutil.move(path2, path1)
-                shutil.move(temp_path, path2)
-            elif checked == [False, True, True, True]:
-                date_dt1 = datetime.fromtimestamp(date1, timezone(timedelta(hours=1)))
-                date_suffix1 = date_dt1.strftime("%Y-%m-%d_%H-%M")
-                directory1, filename1 = os.path.split(path1)
-                new_filename1 = f"{os.path.splitext(filename1)[0]}_{date_suffix1}{os.path.splitext(filename1)[1]}"
-                date_dt2 = datetime.fromtimestamp(date2, timezone(timedelta(hours=1)))
-                date_suffix2 = date_dt2.strftime("%Y-%m-%d_%H-%M")
-                directory2, filename2 = os.path.split(path2)
-                new_filename2 = f"{os.path.splitext(filename2)[0]}_{date_suffix2}{os.path.splitext(filename2)[1]}"
-                new_path1_bk = os.path.join(directory2, new_filename1)
-                new_path2_dir = os.path.join(directory1, filename2)
-                new_path2_bk = os.path.join(directory2, new_filename2)
-                shutil.copy2(path1, new_path1_bk)
-                os.remove(path1)
-                shutil.copy2(path2, new_path2_dir)
-                os.rename(path2, new_path2_bk)
+            except PermissionError:
+                print(f'Permission error on {str(path1)}')
 
             processed_items += 1
             self.update_progress(processed_items, total_items) 
