@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import QAbstractScrollArea, QApplication, QCheckBox, QDeskt
 import shutil
 import sys
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
 
 class CustomHeaderView(QHeaderView):
     '''
@@ -103,7 +106,7 @@ class BackupApp(QWidget):
         self.folders_in_source_table.setColumnCount(3)
         self.folders_in_source_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Folders only in source directory'}, 
-            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png'}, 
+            {1: f'{script_dir}/icons/keep_in_source.png', 2: f'{script_dir}/icons/move_to_backup.png'}, 
             {1: 'Keep in source (folder and contents)', 2: 'Copy to backup (folder and contents)'},
             self.scrollbar_width))
         self.style_table(self.folders_in_source_table)     
@@ -113,7 +116,7 @@ class BackupApp(QWidget):
         self.folders_in_backup_table.setColumnCount(3)
         self.folders_in_backup_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Folders only in backup directory'}, 
-            {1: 'icons/keep_in_backup.png', 2: 'icons/move_to_source.png'}, 
+            {1: f'{script_dir}/icons/keep_in_backup.png', 2: f'{script_dir}/icons/move_to_source.png'}, 
             {1: 'Keep in backup (folder and contents)', 2: 'Copy to source (folder and contents)'},
             self.scrollbar_width))
         self.style_table(self.folders_in_backup_table)
@@ -123,7 +126,7 @@ class BackupApp(QWidget):
         self.files_in_source_table.setColumnCount(3)
         self.files_in_source_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files only in source directory'}, 
-            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png'}, 
+            {1: f'{script_dir}/icons/keep_in_source.png', 2: f'{script_dir}/icons/move_to_backup.png'}, 
             {1: 'Keep in source', 2: 'Copy to backup'},
             self.scrollbar_width))
         self.style_table(self.files_in_source_table)     
@@ -133,7 +136,7 @@ class BackupApp(QWidget):
         self.files_in_backup_table.setColumnCount(3)
         self.files_in_backup_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files only in backup directory'}, 
-            {1: 'icons/keep_in_backup.png', 2: 'icons/move_to_source.png'}, 
+            {1: f'{script_dir}/icons/keep_in_backup.png', 2: f'{script_dir}/icons/move_to_source.png'}, 
             {1: 'Keep in backup', 2: 'Copy to source'},
             self.scrollbar_width))
         self.style_table(self.files_in_backup_table)
@@ -143,7 +146,7 @@ class BackupApp(QWidget):
         self.files_dates_table.setColumnCount(7)
         self.files_dates_table.setHorizontalHeader(CustomHeaderView(
             {0: 'Files with different dates modified', 3: 'Last modified in source', 6: 'Last modified in backup'}, 
-            {1: 'icons/keep_in_source.png', 2: 'icons/move_to_backup.png', 4: 'icons/keep_in_backup.png', 5:'icons/move_to_source.png'}, 
+            {1: f'{script_dir}/icons/keep_in_source.png', 2: f'{script_dir}/icons/move_to_backup.png', 4: f'{script_dir}/icons/keep_in_backup.png', 5: f'{script_dir}/icons/move_to_source.png'}, 
             {1: 'Keep in source', 2: 'Copy to backup', 4: 'Keep in backup', 5: 'Copy to source'},
             self.scrollbar_width, self.date_width))
         self.style_table(self.files_dates_table)
@@ -308,6 +311,10 @@ class BackupApp(QWidget):
         '''
         Compare source and backup directory to find differences
         '''
+
+        # Reset progress bar to 0
+        self.progress_bar.setValue(0)
+        QApplication.processEvents()
 
         # Get paths
         directory = self.dir_line_edit.text()
